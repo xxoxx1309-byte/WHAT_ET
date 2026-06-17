@@ -1,14 +1,42 @@
 :root {
   color-scheme: light;
-  --ink: #242424;
-  --muted: #737373;
-  --blue: #2f73c9;
-  --blue-soft: #e9f3ff;
-  --blue-mid: #9dbcea;
-  --line: #d8d8d8;
-  --panel: #ffffff;
-  --field: #fbfbfb;
-  font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --ink: #1c1b1f;
+  --muted: #787581;
+  --primary: #5d5696;
+  --primary-soft: #e4dfff;
+  --pink: #f4abdb;
+  --line: #c9c5d1;
+  --panel: #fcf8fe;
+  --field: #ffffff;
+  font-family: "Suit", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
+
+@font-face {
+  font-family: "Suit";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Suit";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Suit";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Suit";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-Heavy.woff2") format("woff2");
+  font-weight: 900;
+  font-display: swap;
 }
 
 * {
@@ -18,7 +46,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: #e8f2ff;
+  background: #fcf8fe;
   color: var(--ink);
 }
 
@@ -32,8 +60,8 @@ select {
 button,
 .file-button {
   min-height: 38px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
+  border: 1px solid #c9c5d1;
+  border-radius: 10px;
   background: #fff;
   color: var(--ink);
   padding: 8px 12px;
@@ -43,7 +71,7 @@ button,
 
 button:hover,
 .file-button:hover {
-  border-color: var(--blue);
+  border-color: var(--primary);
 }
 
 .app {
@@ -54,8 +82,8 @@ button:hover,
 
 .panel {
   overflow: auto;
-  padding: 20px;
-  background: var(--panel);
+  padding: 24px;
+  background: #fcf8fe;
   border-right: 1px solid var(--line);
 }
 
@@ -79,8 +107,8 @@ button:hover,
   place-items: center;
   width: 36px;
   height: 36px;
-  border-radius: 6px;
-  background: var(--blue);
+  border-radius: 999px;
+  background: #c7bfff;
   color: #fff;
   font-size: 21px;
   line-height: 1;
@@ -88,7 +116,7 @@ button:hover,
 
 .eyebrow {
   margin: 0 0 2px;
-  color: var(--muted);
+  color: var(--primary);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0;
@@ -102,8 +130,8 @@ h1 {
 }
 
 .primary {
-  background: var(--blue);
-  border-color: var(--blue);
+  background: var(--primary);
+  border-color: var(--primary);
   color: #fff;
 }
 
@@ -118,12 +146,13 @@ h1 {
   min-width: 0;
   padding: 9px 4px;
   font-size: 12px;
-  background: #f6f6f6;
+  background: #f6f2f8;
+  color: #47454f;
 }
 
 .tab.active {
-  background: var(--ink);
-  border-color: var(--ink);
+  background: var(--primary);
+  border-color: var(--primary);
   color: #fff;
 }
 
@@ -149,7 +178,7 @@ textarea,
 select {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 10px;
   background: var(--field);
   color: var(--ink);
   padding: 10px 11px;
@@ -160,8 +189,9 @@ select {
 input:focus,
 textarea:focus,
 select:focus {
-  border-color: var(--blue);
+  border-color: var(--primary);
   background: #fff;
+  box-shadow: 0 0 0 4px rgba(93, 86, 150, 0.12);
 }
 
 textarea {
@@ -176,7 +206,7 @@ input[type="color"] {
 
 input[type="range"] {
   padding: 0;
-  accent-color: var(--blue);
+  accent-color: var(--primary);
 }
 
 .two {
@@ -188,9 +218,9 @@ input[type="range"] {
 .notice,
 .hint {
   color: var(--muted);
-  background: #f7f7f7;
+  background: #f6f2f8;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   padding: 10px 12px;
   line-height: 1.45;
   font-size: 13px;
@@ -207,14 +237,14 @@ input[type="range"] {
   gap: 8px;
   align-items: center;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   padding: 10px;
   background: #fff;
 }
 
 .slot-card.active {
-  border-color: var(--blue);
-  box-shadow: inset 4px 0 0 var(--blue);
+  border-color: var(--primary);
+  box-shadow: inset 4px 0 0 var(--primary);
 }
 
 .slot-title {
@@ -294,7 +324,7 @@ input[type="range"] {
   align-items: center;
   gap: 14px;
   min-height: 58px;
-  background: #fff;
+  background: #fcf8fe;
   border-bottom: 1px solid var(--line);
 }
 
@@ -314,17 +344,17 @@ input[type="range"] {
   min-height: 0;
   display: grid;
   place-items: center;
-  padding: 28px;
+  padding: 32px;
   overflow: auto;
 }
 
 canvas {
   max-width: 100%;
   max-height: calc(100vh - 114px);
-  background: #fff;
+  background: #fcf8fe;
   border: 0;
-  border-radius: 6px;
-  box-shadow: 0 14px 36px rgba(41, 80, 130, 0.12);
+  border-radius: 24px;
+  box-shadow: 0 18px 60px rgba(93, 86, 150, 0.14);
 }
 
 @media (max-width: 980px) {

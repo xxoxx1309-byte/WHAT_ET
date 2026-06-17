@@ -160,13 +160,13 @@ function getLayout() {
     };
   }
   return {
-    main: { x: 70, y: 115, w: 360, h: 800, shape: "free" },
-    outfit: { x: 975, y: 70, w: 520, h: 250, r: 48, shape: "roundRect" },
-    face: { x: 555, y: 350, w: 420, h: 420, r: 34, shape: "roundRect" },
-    expression: { x: 1000, y: 350, w: 500, h: 420, r: 34, shape: "roundRect" },
-    shoes: { x: 80, y: 930, w: 420, h: 190, r: 34, shape: "roundRect" },
-    detailA: { x: 580, y: 930, w: 500, h: 210, r: 48, shape: "roundRect" },
-    detailB: { x: 1135, y: 930, w: 360, h: 210, r: 48, shape: "roundRect" },
+    main: { x: 160, y: 345, w: 520, h: 650, r: 28, shape: "roundRect" },
+    outfit: { x: 730, y: 345, w: 220, h: 220, r: 24, shape: "roundRect" },
+    face: { x: 985, y: 345, w: 220, h: 220, r: 24, shape: "roundRect" },
+    expression: { x: 1240, y: 345, w: 220, h: 220, r: 24, shape: "roundRect" },
+    shoes: { x: 730, y: 705, w: 300, h: 250, r: 24, shape: "roundRect" },
+    detailA: { x: 1060, y: 705, w: 300, h: 250, r: 24, shape: "roundRect" },
+    detailB: { x: 1380, y: 705, w: 0, h: 0, r: 24, shape: "roundRect" },
   };
 }
 
@@ -178,58 +178,41 @@ function draw() {
 }
 
 function drawGridTemplate() {
-  ctx.fillStyle = "#eaf4ff";
+  ctx.fillStyle = "#fcf8fe";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = "#9bbfec";
-  ctx.fillRect(160, 86, 560, 76);
-  ctx.save();
-  ctx.globalAlpha = 0.22;
-  ctx.fillStyle = "#6fa3e2";
-  ctx.beginPath();
-  ctx.moveTo(620, 240);
-  ctx.lineTo(700, 240);
-  ctx.lineTo(480, 460);
-  ctx.lineTo(440, 460);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
+  softCard(70, 88, 1460, 1028, 34);
+  ctx.fillStyle = "#f7f3fb";
+  ctx.fillRect(70, 88, 1460, 145);
+  ctx.fillStyle = "#5d5696";
+  ctx.globalAlpha = 0.1;
+  ctx.fillRect(125, 180, 680, 10);
+  ctx.globalAlpha = 1;
 
   const layout = getLayout();
-  if (state.images.main?.src) drawImageSlot("main", layout.main);
-  else drawSimpleSilhouette();
+  ["main", "outfit", "face", "expression", "shoes", "detailA"].forEach((id) => drawImageSlot(id, layout[id]));
 
-  softCard(465, 115, 640, 95, 0);
-  drawText(`이름 ${state.name || "NAME"}`, 785, 162, 36, 560, "900", "center", "#333");
-  softCard(505, 230, 500, 70, 35);
-  drawText(hashKeywords(state.keywords), 755, 265, 28, 430, "900", "center", "#9b9b9b");
-  drawText(state.height || "172cm", 390, 260, 27, 130, "900", "left", "#111");
-  drawText(state.credit || "@출처", 88, 885, 25, 220, "900", "left", "#111", true);
+  drawText(state.name || "CHARACTER NAME", 125, 150, 58, 720, "900", "left", "#766fb0");
+  drawText(`Age: ${state.age || "--"}    Height: ${state.height || "--"}    Gender: ${state.gender || "--"}`, 130, 215, 24, 760, "700", "left", "#1c1b1f");
+  drawText(state.credit || "@credit", 1380, 150, 22, 220, "700", "right", "#5f5b75");
 
-  softCard(545, 340, 430, 430, 34);
-  softCard(1010, 340, 500, 430, 34);
-  softCard(80, 930, 420, 190, 34);
-  softCard(580, 930, 500, 210, 48);
-  softCard(1135, 930, 360, 210, 48);
-  ["outfit", "detailA", "detailB"].forEach((id) => drawImageSlot(id, layout[id]));
-
-  drawText("캐릭터소개란", 765, 430, 34, 330, "900", "center", "#333");
-  drawWrapped(`성별 : ${state.gender}\n나이 : ${state.age}\n키 : ${state.height}\n\nLIKE :\nHATE :\nHOBBY :`, 615, 535, 29, 320, 40, "800");
-  drawText("EVOL :", 1045, 390, 34, 260, "900", "left", "#333");
-  drawText("특징", 1045, 510, 42, 260, "900", "left", "#333");
-  drawWrapped(state.features || "캐릭터의 특징을 적어주세요!", 1045, 585, 27, 390, 38, "800");
-
-  ["SKIN", "EYE", "HAIR", "ETC", "ETC"].forEach((label, index) => {
-    const x = 570 + index * 180;
+  state.colors.slice(0, 5).forEach((color, index) => {
     ctx.beginPath();
-    ctx.arc(x, 850, 70, 0, Math.PI * 2);
-    ctx.fillStyle = "#fff";
+    ctx.arc(1290 + index * 48, 205, 18, 0, Math.PI * 2);
+    ctx.fillStyle = color;
     ctx.fill();
-    drawText(label, x, 782, 31, 120, "900", "center", "#111", true);
   });
-  drawText("스포이드로 컬러 설정하세요!", 750, 935, 24, 380, "800", "center", "#111");
-  drawWrapped(state.memo, 96, 990, 30, 360, 42, "900", "center");
-  drawWrapped("소지품\n캐릭터 심볼\n\n자유롭게\n사용하세요.", 1315, 1010, 34, 260, 48, "900", "center");
+
+  softCard(730, 600, 300, 320, 18);
+  softCard(1060, 600, 300, 320, 18);
+  drawText("헤어 & 얼굴", 760, 650, 29, 240, "900", "left", "#1c1b1f");
+  drawWrapped(state.summary || "외관 특징을 입력하세요.", 760, 705, 24, 230, 34, "700");
+  drawText("의상 & 기타", 1090, 650, 29, 240, "900", "left", "#1c1b1f");
+  drawWrapped(clampText(state.memo || "의상과 소품 설명을 입력하세요.", 62), 1090, 705, 22, 230, 31, "700");
+
+  ctx.fillStyle = "#c7bfff";
+  roundRect(755, 1012, 430, 12, 6, "#c7bfff");
+  drawText(hashKeywords(state.keywords), 125, 1056, 26, 650, "800", "left", "#787581");
 }
 
 function drawPaperTemplate() {
@@ -304,15 +287,6 @@ function drawImageSlot(id, rect) {
   if (data?.img) drawFittedImage(data.img, rect, data);
   else drawEmptySlot(rect, slotNames[id]);
   ctx.restore();
-
-  if (selectedSlot === id) {
-    ctx.save();
-    ctx.strokeStyle = "#2f73c9";
-    ctx.lineWidth = 3;
-    ctx.globalAlpha = 0.75;
-    strokeShape(rect);
-    ctx.restore();
-  }
 
   if (rect.label) drawText(rect.label, rect.x + rect.w - 10, rect.y + rect.h - 18, 28, 180, "900", "right", "#fff", true);
 }
@@ -413,7 +387,7 @@ function line(x1, y1, x2, y2) {
 
 function drawText(text, x, y, size, maxWidth, weight = "700", align = "left", color = "#111", outline = false) {
   ctx.save();
-  ctx.font = `${weight} ${size}px "Malgun Gothic", sans-serif`;
+  ctx.font = `${weight} ${size}px "Suit", "Malgun Gothic", sans-serif`;
   ctx.textAlign = align;
   ctx.textBaseline = "middle";
   if (outline) {
@@ -428,7 +402,7 @@ function drawText(text, x, y, size, maxWidth, weight = "700", align = "left", co
 
 function drawWrapped(text, x, y, size, maxWidth, lineHeight, weight = "700", align = "left") {
   ctx.save();
-  ctx.font = `${weight} ${size}px "Malgun Gothic", sans-serif`;
+  ctx.font = `${weight} ${size}px "Suit", "Malgun Gothic", sans-serif`;
   ctx.textAlign = align;
   ctx.textBaseline = "top";
   ctx.fillStyle = "#111";
@@ -474,6 +448,11 @@ function hashLines(text) {
 function hashKeywords(text) {
   const words = String(text).split(/,|\s/).map((word) => word.trim()).filter(Boolean).slice(0, 3);
   return words.length ? words.map((word) => `#${word}`).join("  ") : "#키워드  #키워드  #키워드";
+}
+
+function clampText(text, maxLength) {
+  const normalized = String(text).replace(/\s+/g, " ").trim();
+  return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}...` : normalized;
 }
 
 function drawSimpleSilhouette() {
@@ -772,3 +751,4 @@ function init() {
 
 bindInputs();
 init();
+document.fonts?.ready.then(draw);
