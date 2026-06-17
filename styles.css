@@ -1,26 +1,26 @@
 @font-face {
-  font-family: "Suit";
+  font-family: "SUIT";
   src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-Regular.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Suit";
+  font-family: "SUIT";
   src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-SemiBold.woff2") format("woff2");
   font-weight: 600;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Suit";
+  font-family: "SUIT";
   src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-Bold.woff2") format("woff2");
   font-weight: 700;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Suit";
+  font-family: "SUIT";
   src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-Heavy.woff2") format("woff2");
   font-weight: 900;
   font-display: swap;
@@ -35,7 +35,7 @@
   --panel: #fcf8fe;
   --surface: #ffffff;
   --soft: #f6f2f8;
-  font-family: "Suit", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  font-family: "SUIT", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
 }
 
 * {

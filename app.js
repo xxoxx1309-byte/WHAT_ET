@@ -32,10 +32,15 @@ function init() {
   });
 
   ["name", "age", "height", "gender", "keywords", "credit", "summary", "memo"].forEach((id) => {
-    document.querySelector(`#${id}`).addEventListener("input", (event) => {
-      state[id] = event.target.value;
+    const input = document.querySelector(`#${id}`);
+    const sync = () => {
+      state[id] = input.value;
       draw();
-    });
+    };
+    input.addEventListener("input", sync);
+    input.addEventListener("compositionend", sync);
+    input.addEventListener("change", sync);
+    input.addEventListener("keyup", sync);
   });
 
   document.querySelector("#zoom").addEventListener("input", updateSelectedImage);
@@ -315,7 +320,7 @@ function pathRoundRect(x, y, w, h, r) {
 
 function drawText(text, x, y, size, maxWidth, weight = 700, align = "left", color = "#1c1b1f") {
   ctx.save();
-  ctx.font = `${weight} ${size}px "Suit", "Malgun Gothic", sans-serif`;
+  ctx.font = `${weight} ${size}px "SUIT", "Malgun Gothic", sans-serif`;
   ctx.textAlign = align;
   ctx.textBaseline = "middle";
   ctx.fillStyle = color;
@@ -325,7 +330,7 @@ function drawText(text, x, y, size, maxWidth, weight = 700, align = "left", colo
 
 function drawWrapped(text, x, y, size, maxWidth, lineHeight, weight = 700) {
   ctx.save();
-  ctx.font = `${weight} ${size}px "Suit", "Malgun Gothic", sans-serif`;
+  ctx.font = `${weight} ${size}px "SUIT", "Malgun Gothic", sans-serif`;
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
   ctx.fillStyle = "#1c1b1f";
