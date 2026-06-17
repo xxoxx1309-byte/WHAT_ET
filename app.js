@@ -61,6 +61,7 @@ function init() {
   renderSlots();
   renderSwatches();
   syncAdjust();
+  applyUiTheme();
   draw();
   document.fonts?.ready.then(draw);
 }
@@ -84,12 +85,14 @@ function renderSlots() {
 function renderSwatches() {
   const wrap = document.querySelector("#swatches");
   wrap.innerHTML = "";
+  const names = ["포인트", "보조", "강조", "면", "글자"];
   state.colors.forEach((color, index) => {
     const label = document.createElement("label");
     label.className = "swatch";
-    label.innerHTML = `컬러 ${index + 1}<input type="color" value="${color}">`;
+    label.innerHTML = `${names[index]}<input type="color" value="${color}">`;
     label.querySelector("input").addEventListener("input", (event) => {
       state.colors[index] = event.target.value;
+      applyUiTheme();
       draw();
     });
     wrap.append(label);
@@ -196,17 +199,19 @@ function draw() {
 }
 
 function drawSheet() {
-  ctx.fillStyle = "#fcf8fe";
+  const theme = getTheme();
+
+  ctx.fillStyle = theme.background;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  softCard(70, 88, 1460, 1028, 34);
-  ctx.fillStyle = "#f7f3fb";
+  softCard(70, 88, 1460, 1028, 34, theme.surface, theme.shadow);
+  ctx.fillStyle = theme.header;
   ctx.fillRect(70, 88, 1460, 145);
-  roundRect(125, 180, 680, 10, 6, "#e4dfff");
+  roundRect(125, 180, 680, 10, 6, theme.line);
 
-  drawText(state.name || "CHARACTER NAME", 125, 150, 58, 720, 900, "left", "#766fb0");
-  drawText(metaText(), 130, 215, 24, 760, 700, "left", "#1c1b1f");
-  drawText(state.credit || "@credit", 1380, 150, 22, 220, 700, "right", "#5f5b75");
+  drawText(state.name || "CHARACTER NAME", 125, 150, 58, 720, 900, "left", theme.primary);
+  drawText(metaText(), 130, 215, 24, 760, 700, "left", theme.text);
+  drawText(state.credit || "@credit", 1380, 150, 22, 220, 700, "right", theme.muted);
 
   state.colors.forEach((color, index) => {
     ctx.beginPath();
@@ -215,32 +220,32 @@ function drawSheet() {
     ctx.fill();
   });
 
-  Object.entries(slots).forEach(([id, slot]) => drawImageSlot(id, slot));
+  Object.entries(slots).forEach(([id, slot]) => drawImageSlot(id, slot, theme));
 
-  softCard(730, 600, 300, 320, 18);
-  softCard(1060, 600, 300, 320, 18);
-  drawText("헤어 & 얼굴", 760, 650, 29, 240, 900, "left", "#1c1b1f");
-  drawWrapped(state.summary || "외관 특징을 입력하세요.", 760, 705, 24, 230, 34, 700);
-  drawText("의상 & 기타", 1090, 650, 29, 240, 900, "left", "#1c1b1f");
-  drawWrapped(clampText(state.memo || "의상과 소품 설명을 입력하세요.", 62), 1090, 705, 22, 230, 31, 700);
+  softCard(730, 600, 300, 320, 18, theme.surface, theme.shadow);
+  softCard(1060, 600, 300, 320, 18, theme.surface, theme.shadow);
+  drawText("헤어 & 얼굴", 760, 650, 29, 240, 900, "left", theme.text);
+  drawWrapped(state.summary || "외관 특징을 입력하세요.", 760, 705, 24, 230, 34, 700, theme.text);
+  drawText("의상 & 기타", 1090, 650, 29, 240, 900, "left", theme.text);
+  drawWrapped(clampText(state.memo || "의상과 소품 설명을 입력하세요.", 62), 1090, 705, 22, 230, 31, 700, theme.text);
 
-  roundRect(755, 1012, 430, 12, 6, "#c7bfff");
-  drawText(hashKeywords(state.keywords), 125, 1056, 26, 650, 800, "left", "#787581");
+  roundRect(755, 1012, 430, 12, 6, theme.secondary);
+  drawText(hashKeywords(state.keywords), 125, 1056, 26, 650, 800, "left", theme.muted);
 }
 
-function drawImageSlot(id, slot) {
+function drawImageSlot(id, slot, theme) {
   ctx.save();
   pathRoundRect(slot.x, slot.y, slot.w, slot.h, slot.r);
   ctx.clip();
-  ctx.fillStyle = "#fbfafc";
+  ctx.fillStyle = theme.slot;
   ctx.fillRect(slot.x, slot.y, slot.w, slot.h);
 
   const image = state.images[id];
   if (image?.img) {
     drawFittedImage(image.img, slot, image);
   } else {
-    drawText(slot.label, slot.x + slot.w / 2, slot.y + slot.h / 2 - 12, 24, slot.w - 36, 800, "center", "#1c1b1f");
-    drawText("이미지 업로드", slot.x + slot.w / 2, slot.y + slot.h / 2 + 24, 17, slot.w - 36, 600, "center", "#787581");
+    drawText(slot.label, slot.x + slot.w / 2, slot.y + slot.h / 2 - 12, 24, slot.w - 36, 800, "center", theme.text);
+    drawText("이미지 업로드", slot.x + slot.w / 2, slot.y + slot.h / 2 + 24, 17, slot.w - 36, 600, "center", theme.muted);
   }
   ctx.restore();
 }
@@ -290,12 +295,12 @@ function hitSlot(point) {
   ))?.[0];
 }
 
-function softCard(x, y, w, h, r) {
+function softCard(x, y, w, h, r, fill = "#fff", shadow = "rgba(93, 86, 150, 0.12)") {
   ctx.save();
-  ctx.shadowColor = "rgba(93, 86, 150, 0.12)";
+  ctx.shadowColor = shadow;
   ctx.shadowBlur = 18;
   ctx.shadowOffsetY = 8;
-  roundRect(x, y, w, h, r, "#fff");
+  roundRect(x, y, w, h, r, fill);
   ctx.restore();
 }
 
@@ -328,12 +333,12 @@ function drawText(text, x, y, size, maxWidth, weight = 700, align = "left", colo
   ctx.restore();
 }
 
-function drawWrapped(text, x, y, size, maxWidth, lineHeight, weight = 700) {
+function drawWrapped(text, x, y, size, maxWidth, lineHeight, weight = 700, color = "#1c1b1f") {
   ctx.save();
   ctx.font = `${weight} ${size}px "SUIT", "Malgun Gothic", sans-serif`;
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
-  ctx.fillStyle = "#1c1b1f";
+  ctx.fillStyle = color;
   String(text).split("\n").forEach((paragraph) => {
     let line = "";
     paragraph.split(" ").forEach((word) => {
@@ -350,6 +355,56 @@ function drawWrapped(text, x, y, size, maxWidth, lineHeight, weight = 700) {
     y += lineHeight;
   });
   ctx.restore();
+}
+
+function getTheme() {
+  const [primary, secondary, accent, surface, text] = state.colors;
+  return {
+    primary,
+    secondary,
+    accent,
+    surface,
+    text,
+    background: mix(surface, secondary, 0.16),
+    header: mix(surface, secondary, 0.24),
+    line: mix(surface, primary, 0.18),
+    slot: mix(surface, secondary, 0.07),
+    muted: mix(text, primary, 0.45),
+    shadow: hexToRgba(primary, 0.14),
+  };
+}
+
+function applyUiTheme() {
+  const theme = getTheme();
+  const root = document.documentElement;
+  root.style.setProperty("--ink", theme.text);
+  root.style.setProperty("--muted", theme.muted);
+  root.style.setProperty("--primary", theme.primary);
+  root.style.setProperty("--line", theme.line);
+  root.style.setProperty("--panel", theme.background);
+  root.style.setProperty("--surface", theme.surface);
+  root.style.setProperty("--soft", theme.header);
+}
+
+function mix(a, b, amount) {
+  const ca = hexToRgb(a);
+  const cb = hexToRgb(b);
+  const mixed = ca.map((value, index) => Math.round(value * (1 - amount) + cb[index] * amount));
+  return rgbToHex(mixed);
+}
+
+function hexToRgb(hex) {
+  const clean = hex.replace("#", "");
+  return [0, 2, 4].map((start) => parseInt(clean.slice(start, start + 2), 16));
+}
+
+function rgbToHex(rgb) {
+  return `#${rgb.map((value) => value.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function hexToRgba(hex, alpha) {
+  const [r, g, b] = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 init();
