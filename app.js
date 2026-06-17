@@ -3,7 +3,7 @@ const ctx = canvas.getContext("2d");
 const picker = document.querySelector("#imagePicker");
 
 const templates = {
-  grid: { label: "블루 그리드 외관표", width: 1920, height: 1200 },
+  grid: { label: "파스텔 블루 자료표", width: 1600, height: 1200 },
   paper: { label: "종이 자료틀", width: 1024, height: 1024 },
 };
 
@@ -160,13 +160,13 @@ function getLayout() {
     };
   }
   return {
-    main: { x: 76, y: 90, w: 706, h: 1070, r: 10, shape: "rect" },
-    outfit: { x: 815, y: 210, w: 340, h: 340, shape: "circle", label: "기본의상" },
-    face: { x: 1195, y: 210, w: 340, h: 340, shape: "circle" },
-    expression: { x: 1548, y: 210, w: 340, h: 340, shape: "circle" },
-    shoes: { x: 815, y: 724, w: 340, h: 340, shape: "circle", label: "신발" },
-    detailA: { x: 1195, y: 724, w: 340, h: 340, shape: "circle" },
-    detailB: { x: 1548, y: 724, w: 340, h: 340, shape: "circle" },
+    main: { x: 70, y: 115, w: 360, h: 800, shape: "free" },
+    outfit: { x: 975, y: 70, w: 520, h: 250, r: 48, shape: "roundRect" },
+    face: { x: 555, y: 350, w: 420, h: 420, r: 34, shape: "roundRect" },
+    expression: { x: 1000, y: 350, w: 500, h: 420, r: 34, shape: "roundRect" },
+    shoes: { x: 80, y: 930, w: 420, h: 190, r: 34, shape: "roundRect" },
+    detailA: { x: 580, y: 930, w: 500, h: 210, r: 48, shape: "roundRect" },
+    detailB: { x: 1135, y: 930, w: 360, h: 210, r: 48, shape: "roundRect" },
   };
 }
 
@@ -178,29 +178,55 @@ function draw() {
 }
 
 function drawGridTemplate() {
-  ctx.fillStyle = state.bgColor;
+  ctx.fillStyle = "#e8f3ff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  roundRect(44, 38, 1832, 1158, 12, "#fff");
-  drawGrid(76, 54, 1780, 1128, 72, state.accentColor);
-  Object.entries(getLayout()).forEach(([id, rect]) => drawImageSlot(id, rect));
 
-  ctx.textAlign = "left";
-  drawText(`${state.name} | ${state.age} | ${state.height} | ${state.gender}`, 815, 145, 40, 760, "900");
-  drawText(state.summary, 815, 182, 26, 980, "700");
-  drawWrapped(state.features, 818, 594, 31, 1030, 38, "700");
-  drawWrapped(state.memo, 818, 1068, 24, 760, 31, "700");
-  drawText("대표 키워드", 1725, 1042, 34, 170, "900", "center");
-  drawWrapped(state.keywords.replaceAll(",", "\n"), 1725, 1084, 23, 180, 28, "700", "center");
+  ctx.fillStyle = "#8eb5e7";
+  ctx.fillRect(210, 70, 620, 85);
+  ctx.save();
+  ctx.globalAlpha = 0.3;
+  ctx.fillStyle = "#9ec1ed";
+  ctx.beginPath();
+  ctx.moveTo(585, 250);
+  ctx.lineTo(670, 250);
+  ctx.lineTo(465, 455);
+  ctx.lineTo(445, 455);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 
-  state.colors.forEach((color, index) => {
-    const x = 1518 + index * 76;
-    roundRect(x, 122, 68, 68, 7, color);
-    ctx.strokeStyle = "#eef0f4";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x, 122, 68, 68);
+  const layout = getLayout();
+  if (state.images.main?.src) drawImageSlot("main", layout.main);
+  else drawSimpleSilhouette();
+  ["outfit", "detailA", "detailB"].forEach((id) => drawImageSlot(id, layout[id]));
+
+  roundStroke(465, 115, 640, 95, 0, "#fff", "#2f73c9", 3);
+  drawText(`이름 ${state.name || "NAME"}`, 785, 162, 36, 560, "900", "center", "#333");
+  roundStroke(505, 230, 500, 70, 35, "#fff", "#333", 3);
+  drawText(hashKeywords(state.keywords), 755, 265, 28, 430, "900", "center", "#9b9b9b");
+  drawText(state.height || "172cm", 390, 260, 27, 130, "900", "left", "#111");
+  drawText(state.credit || "@출처", 88, 885, 25, 220, "900", "left", "#111", true);
+
+  drawText("캐릭터소개란", 765, 430, 34, 330, "900", "center", "#333");
+  drawWrapped(`성별 : ${state.gender}\n나이 : ${state.age}\n키 : ${state.height}\n\nLIKE :\nHATE :\nHOBBY :`, 615, 535, 29, 320, 40, "800");
+  drawText("EVOL :", 1045, 390, 34, 260, "900", "left", "#333");
+  drawText("특징", 1045, 510, 42, 260, "900", "left", "#333");
+  drawWrapped(state.features || "캐릭터의 특징을 적어주세요!", 1045, 585, 27, 390, 38, "800");
+
+  ["SKIN", "EYE", "HAIR", "ETC", "ETC"].forEach((label, index) => {
+    const x = 570 + index * 180;
+    ctx.beginPath();
+    ctx.arc(x, 850, 70, 0, Math.PI * 2);
+    ctx.fillStyle = "#fff";
+    ctx.fill();
+    ctx.strokeStyle = "#2f73c9";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    drawText(label, x, 782, 31, 120, "900", "center", "#111", true);
   });
-
-  drawText(state.credit, 94, 136, 30, 270, "900", "left", "#fff", true);
+  drawText("스포이드로 컬러 설정하세요!", 750, 935, 24, 380, "800", "center", "#111");
+  drawWrapped(state.memo, 96, 990, 30, 360, 42, "900", "center");
+  drawWrapped("소지품\n캐릭터 심볼\n\n자유롭게\n사용하세요.", 1315, 1010, 34, 260, 48, "900", "center");
 }
 
 function drawPaperTemplate() {
@@ -352,6 +378,16 @@ function roundRect(x, y, w, h, r, fill) {
   ctx.fill();
 }
 
+function roundStroke(x, y, w, h, r, fill, stroke, lineWidth = 3) {
+  ctx.beginPath();
+  pathRoundRect(x, y, w, h, r);
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = lineWidth;
+  ctx.stroke();
+}
+
 function pathRoundRect(x, y, w, h, r) {
   ctx.moveTo(x + r, y);
   ctx.lineTo(x + w - r, y);
@@ -429,6 +465,50 @@ function splitLongWord(word, maxWidth) {
 
 function hashLines(text) {
   return String(text).split(/\n|\|/).map((line) => line.trim()).filter(Boolean).slice(0, 3).map((line) => `#${line}`).join("\n");
+}
+
+function hashKeywords(text) {
+  const words = String(text).split(/,|\s/).map((word) => word.trim()).filter(Boolean).slice(0, 3);
+  return words.length ? words.map((word) => `#${word}`).join("  ") : "#키워드  #키워드  #키워드";
+}
+
+function drawSimpleSilhouette() {
+  if (state.images.main?.src) return;
+  ctx.save();
+  ctx.fillStyle = "#5a7fb8";
+  ctx.beginPath();
+  ctx.ellipse(235, 205, 70, 88, -0.08, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillRect(185, 285, 95, 265);
+  ctx.beginPath();
+  ctx.moveTo(185, 285);
+  ctx.lineTo(125, 520);
+  ctx.quadraticCurveTo(110, 610, 160, 650);
+  ctx.lineTo(238, 470);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(280, 285);
+  ctx.lineTo(350, 630);
+  ctx.quadraticCurveTo(330, 665, 300, 650);
+  ctx.lineTo(235, 470);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(178, 548);
+  ctx.lineTo(230, 548);
+  ctx.lineTo(215, 900);
+  ctx.quadraticCurveTo(190, 932, 170, 895);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(245, 548);
+  ctx.lineTo(295, 548);
+  ctx.lineTo(345, 900);
+  ctx.quadraticCurveTo(322, 940, 292, 905);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 }
 
 function canvasPoint(event) {
