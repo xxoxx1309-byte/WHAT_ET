@@ -178,19 +178,19 @@ function draw() {
 }
 
 function drawGridTemplate() {
-  ctx.fillStyle = "#e8f3ff";
+  ctx.fillStyle = "#eaf4ff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = "#8eb5e7";
-  ctx.fillRect(210, 70, 620, 85);
+  ctx.fillStyle = "#9bbfec";
+  ctx.fillRect(160, 86, 560, 76);
   ctx.save();
-  ctx.globalAlpha = 0.3;
-  ctx.fillStyle = "#9ec1ed";
+  ctx.globalAlpha = 0.22;
+  ctx.fillStyle = "#6fa3e2";
   ctx.beginPath();
-  ctx.moveTo(585, 250);
-  ctx.lineTo(670, 250);
-  ctx.lineTo(465, 455);
-  ctx.lineTo(445, 455);
+  ctx.moveTo(620, 240);
+  ctx.lineTo(700, 240);
+  ctx.lineTo(480, 460);
+  ctx.lineTo(440, 460);
   ctx.closePath();
   ctx.fill();
   ctx.restore();
@@ -198,14 +198,20 @@ function drawGridTemplate() {
   const layout = getLayout();
   if (state.images.main?.src) drawImageSlot("main", layout.main);
   else drawSimpleSilhouette();
-  ["outfit", "detailA", "detailB"].forEach((id) => drawImageSlot(id, layout[id]));
 
-  roundStroke(465, 115, 640, 95, 0, "#fff", "#2f73c9", 3);
+  softCard(465, 115, 640, 95, 0);
   drawText(`이름 ${state.name || "NAME"}`, 785, 162, 36, 560, "900", "center", "#333");
-  roundStroke(505, 230, 500, 70, 35, "#fff", "#333", 3);
+  softCard(505, 230, 500, 70, 35);
   drawText(hashKeywords(state.keywords), 755, 265, 28, 430, "900", "center", "#9b9b9b");
   drawText(state.height || "172cm", 390, 260, 27, 130, "900", "left", "#111");
   drawText(state.credit || "@출처", 88, 885, 25, 220, "900", "left", "#111", true);
+
+  softCard(545, 340, 430, 430, 34);
+  softCard(1010, 340, 500, 430, 34);
+  softCard(80, 930, 420, 190, 34);
+  softCard(580, 930, 500, 210, 48);
+  softCard(1135, 930, 360, 210, 48);
+  ["outfit", "detailA", "detailB"].forEach((id) => drawImageSlot(id, layout[id]));
 
   drawText("캐릭터소개란", 765, 430, 34, 330, "900", "center", "#333");
   drawWrapped(`성별 : ${state.gender}\n나이 : ${state.age}\n키 : ${state.height}\n\nLIKE :\nHATE :\nHOBBY :`, 615, 535, 29, 320, 40, "800");
@@ -219,9 +225,6 @@ function drawGridTemplate() {
     ctx.arc(x, 850, 70, 0, Math.PI * 2);
     ctx.fillStyle = "#fff";
     ctx.fill();
-    ctx.strokeStyle = "#2f73c9";
-    ctx.lineWidth = 4;
-    ctx.stroke();
     drawText(label, x, 782, 31, 120, "900", "center", "#111", true);
   });
   drawText("스포이드로 컬러 설정하세요!", 750, 935, 24, 380, "800", "center", "#111");
@@ -304,9 +307,9 @@ function drawImageSlot(id, rect) {
 
   if (selectedSlot === id) {
     ctx.save();
-    ctx.strokeStyle = "#ffcf33";
-    ctx.lineWidth = 5;
-    ctx.setLineDash([12, 8]);
+    ctx.strokeStyle = "#2f73c9";
+    ctx.lineWidth = 3;
+    ctx.globalAlpha = 0.75;
     strokeShape(rect);
     ctx.restore();
   }
@@ -317,14 +320,6 @@ function drawImageSlot(id, rect) {
 function drawEmptySlot(rect, label) {
   ctx.fillStyle = state.template === "paper" ? "#050505" : "#f9faf8";
   ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-  if (state.template !== "paper") {
-    ctx.save();
-    ctx.strokeStyle = "#d6d0c7";
-    ctx.lineWidth = 3;
-    ctx.setLineDash([12, 10]);
-    ctx.strokeRect(rect.x + 18, rect.y + 18, rect.w - 36, rect.h - 36);
-    ctx.restore();
-  }
   ctx.fillStyle = state.template === "paper" ? "#fff" : "#404653";
   drawText(label, rect.x + rect.w / 2, rect.y + rect.h / 2 - 12, 25, rect.w - 42, "900", "center");
   if (state.template !== "paper") {
@@ -386,6 +381,15 @@ function roundStroke(x, y, w, h, r, fill, stroke, lineWidth = 3) {
   ctx.strokeStyle = stroke;
   ctx.lineWidth = lineWidth;
   ctx.stroke();
+}
+
+function softCard(x, y, w, h, r) {
+  ctx.save();
+  ctx.shadowColor = "rgba(69, 104, 150, 0.12)";
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 8;
+  roundRect(x, y, w, h, r, "#fff");
+  ctx.restore();
 }
 
 function pathRoundRect(x, y, w, h, r) {
