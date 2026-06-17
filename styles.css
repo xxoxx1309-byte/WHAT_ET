@@ -252,7 +252,7 @@ input[type="color"] {
 
 .color-row {
   display: grid;
-  grid-template-columns: 1fr 52px 54px;
+  grid-template-columns: minmax(0, 1fr) 52px 58px 54px;
   gap: 8px;
   align-items: center;
 }
@@ -266,10 +266,15 @@ input[type="color"] {
   padding: 4px;
 }
 
+.color-reset,
 .color-remove {
   min-height: 40px;
   padding: 0;
   font-size: 12px;
+}
+
+.color-reset {
+  color: var(--muted);
 }
 
 .color-remove:disabled {

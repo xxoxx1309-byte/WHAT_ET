@@ -19,10 +19,10 @@ const state = {
   summary: "",
   memo: "",
   characterColors: [
-    { label: "테마", color: "#5d5696", fixed: true },
-    { label: "머리", color: "#2f4f9f", fixed: true },
-    { label: "눈", color: "#76a9ff", fixed: true },
-    { label: "피부", color: "#f1c7b8", fixed: true },
+    { label: "테마", color: "#5d5696", fixed: true, set: false },
+    { label: "머리", color: "#ffffff", fixed: true, set: false },
+    { label: "눈", color: "#ffffff", fixed: true, set: false },
+    { label: "피부", color: "#ffffff", fixed: true, set: false },
   ],
   images: {},
 };
@@ -96,6 +96,7 @@ function renderSwatches() {
     row.innerHTML = `
       <input class="color-name" type="text" value="${escapeHtml(item.label)}" aria-label="색 이름">
       <input class="color-picker" type="color" value="${item.color}" aria-label="${escapeHtml(item.label)} 색">
+      <button class="color-reset" type="button">${item.set ? "해제" : "미설정"}</button>
       <button class="color-remove" type="button" ${item.fixed ? "disabled" : ""}>삭제</button>
     `;
     row.querySelector(".color-name").addEventListener("input", (event) => {
@@ -104,7 +105,14 @@ function renderSwatches() {
     });
     row.querySelector(".color-picker").addEventListener("input", (event) => {
       state.characterColors[index].color = event.target.value;
+      state.characterColors[index].set = true;
+      renderSwatches();
       draw();
+    });
+    row.querySelector(".color-reset").addEventListener("click", () => {
+      state.characterColors[index].set = false;
+      draw();
+      renderSwatches();
     });
     row.querySelector(".color-remove").addEventListener("click", () => {
       state.characterColors.splice(index, 1);
@@ -116,7 +124,7 @@ function renderSwatches() {
 }
 
 function addColor() {
-  state.characterColors.push({ label: `추가 색 ${state.characterColors.length - 2}`, color: "#c7bfff", fixed: false });
+  state.characterColors.push({ label: "", color: "#ffffff", fixed: false, set: false });
   renderSwatches();
   draw();
 }
@@ -235,7 +243,7 @@ function drawSheet() {
   drawText(metaText(), 130, 218, 22, 760, 700, "left", theme.text);
   drawText(state.credit || "@credit", 1380, 150, 22, 220, 700, "right", theme.muted);
 
-  state.characterColors.slice(0, 7).forEach((item, index) => {
+  state.characterColors.filter((item) => item.set).slice(0, 7).forEach((item, index) => {
     ctx.beginPath();
     ctx.arc(1240 + index * 42, 205, 16, 0, Math.PI * 2);
     ctx.fillStyle = item.color;
@@ -295,7 +303,7 @@ function metaText() {
 
 function hashKeywords(text) {
   const words = String(text).split(/,|\s/).map((word) => word.trim()).filter(Boolean).slice(0, 3);
-  return words.length ? words.map((word) => `#${word}`).join("  ") : "#keyword  #keyword  #keyword";
+  return words.length ? words.map((word) => `#${word}`).join("  ") : "";
 }
 
 function clampText(text, maxLength) {
@@ -398,8 +406,8 @@ function getTheme() {
 }
 
 function getThemeBaseColor() {
-  return state.characterColors.find((item) => item.label.trim() === "테마")?.color
-    || state.characterColors[0]?.color
+  return state.characterColors.find((item) => item.label.trim() === "테마" && item.set)?.color
+    || state.characterColors.find((item) => item.set)?.color
     || "#5d5696";
 }
 
