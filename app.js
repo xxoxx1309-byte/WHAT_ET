@@ -18,7 +18,12 @@ const state = {
   credit: "",
   summary: "",
   memo: "",
-  baseColor: "#5d5696",
+  characterColors: [
+    { label: "테마", color: "#5d5696", fixed: true },
+    { label: "머리", color: "#2f4f9f", fixed: true },
+    { label: "눈", color: "#76a9ff", fixed: true },
+    { label: "피부", color: "#f1c7b8", fixed: true },
+  ],
   images: {},
 };
 
@@ -50,6 +55,7 @@ function init() {
   document.querySelector("#fillImage").addEventListener("click", () => setImageMode("fill"));
   document.querySelector("#clearImage").addEventListener("click", clearSelectedImage);
   document.querySelector("#exportPng").addEventListener("click", exportPng);
+  document.querySelector("#addColor").addEventListener("click", addColor);
   picker.addEventListener("change", importImage);
 
   canvas.addEventListener("dblclick", openClickedSlot);
@@ -84,25 +90,35 @@ function renderSlots() {
 function renderSwatches() {
   const wrap = document.querySelector("#swatches");
   wrap.innerHTML = "";
-
-  const pickerLabel = document.createElement("label");
-  pickerLabel.className = "swatch swatch-main";
-  pickerLabel.innerHTML = `기준 컬러<input type="color" value="${state.baseColor}">`;
-  pickerLabel.querySelector("input").addEventListener("input", (event) => {
-    state.baseColor = event.target.value;
-    renderSwatches();
-    draw();
+  state.characterColors.forEach((item, index) => {
+    const row = document.createElement("div");
+    row.className = "color-row";
+    row.innerHTML = `
+      <input class="color-name" type="text" value="${escapeHtml(item.label)}" aria-label="색 이름">
+      <input class="color-picker" type="color" value="${item.color}" aria-label="${escapeHtml(item.label)} 색">
+      <button class="color-remove" type="button" ${item.fixed ? "disabled" : ""}>삭제</button>
+    `;
+    row.querySelector(".color-name").addEventListener("input", (event) => {
+      state.characterColors[index].label = event.target.value;
+      draw();
+    });
+    row.querySelector(".color-picker").addEventListener("input", (event) => {
+      state.characterColors[index].color = event.target.value;
+      draw();
+    });
+    row.querySelector(".color-remove").addEventListener("click", () => {
+      state.characterColors.splice(index, 1);
+      renderSwatches();
+      draw();
+    });
+    wrap.append(row);
   });
-  wrap.append(pickerLabel);
+}
 
-  const palette = generatePalette(state.baseColor);
-  const names = ["포인트", "보조", "강조", "배경", "글자"];
-  palette.forEach((color, index) => {
-    const chip = document.createElement("div");
-    chip.className = "tone-chip";
-    chip.innerHTML = `<span style="background:${color}"></span><small>${names[index]}</small>`;
-    wrap.append(chip);
-  });
+function addColor() {
+  state.characterColors.push({ label: `추가 색 ${state.characterColors.length - 2}`, color: "#c7bfff", fixed: false });
+  renderSwatches();
+  draw();
 }
 
 function selectSlot(id) {
@@ -212,17 +228,17 @@ function drawSheet() {
 
   softCard(70, 88, 1460, 1028, 34, theme.surface, theme.shadow);
   ctx.fillStyle = theme.header;
-  ctx.fillRect(70, 88, 1460, 145);
-  roundRect(125, 180, 680, 10, 6, theme.line);
+  ctx.fillRect(70, 88, 1460, 162);
+  roundRect(125, 184, 680, 10, 6, theme.line);
 
   drawText(state.name || "CHARACTER NAME", 125, 150, 58, 720, 900, "left", theme.primary);
-  drawText(metaText(), 130, 215, 24, 760, 700, "left", theme.text);
+  drawText(metaText(), 130, 218, 22, 760, 700, "left", theme.text);
   drawText(state.credit || "@credit", 1380, 150, 22, 220, 700, "right", theme.muted);
 
-  theme.palette.forEach((color, index) => {
+  state.characterColors.slice(0, 7).forEach((item, index) => {
     ctx.beginPath();
-    ctx.arc(1290 + index * 48, 205, 18, 0, Math.PI * 2);
-    ctx.fillStyle = color;
+    ctx.arc(1240 + index * 42, 205, 16, 0, Math.PI * 2);
+    ctx.fillStyle = item.color;
     ctx.fill();
   });
 
@@ -274,7 +290,7 @@ function exportPng() {
 }
 
 function metaText() {
-  return `Age: ${state.age || "--"}    Height: ${state.height || "--"}    Gender: ${state.gender || "--"}`;
+  return `나이 ${state.age || "--"}    키 ${state.height || "--"}    성별 ${state.gender || "--"}`;
 }
 
 function hashKeywords(text) {
@@ -364,7 +380,7 @@ function drawWrapped(text, x, y, size, maxWidth, lineHeight, weight = 700, color
 }
 
 function getTheme() {
-  const [primary, secondary, accent, surface, text] = generatePalette(state.baseColor);
+  const [primary, secondary, accent, surface, text] = generatePalette(getThemeBaseColor());
   return {
     primary,
     secondary,
@@ -379,6 +395,12 @@ function getTheme() {
     muted: mix(text, primary, 0.45),
     shadow: hexToRgba(primary, 0.14),
   };
+}
+
+function getThemeBaseColor() {
+  return state.characterColors.find((item) => item.label.trim() === "테마")?.color
+    || state.characterColors[0]?.color
+    || "#5d5696";
 }
 
 function generatePalette(baseColor) {
@@ -449,6 +471,14 @@ function rgbToHex(rgb) {
 function hexToRgba(hex, alpha) {
   const [r, g, b] = hexToRgb(hex);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
 
 init();
