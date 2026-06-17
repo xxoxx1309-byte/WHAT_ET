@@ -139,6 +139,12 @@ h2 {
   font-weight: 900;
 }
 
+.subcopy {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .primary {
   background: var(--primary);
   border-color: var(--primary);
@@ -248,6 +254,27 @@ input[type="color"] {
 .swatch {
   display: grid;
   gap: 8px;
+}
+
+.swatch-main {
+  grid-column: 1 / -1;
+}
+
+.tone-chip {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tone-chip span {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid var(--line);
+  border-radius: 999px;
 }
 
 .workspace {

@@ -18,7 +18,7 @@ const state = {
   credit: "",
   summary: "",
   memo: "",
-  colors: ["#5d5696", "#c7bfff", "#f4abdb", "#ffffff", "#1c1b1f"],
+  baseColor: "#5d5696",
   images: {},
 };
 
@@ -84,16 +84,24 @@ function renderSlots() {
 function renderSwatches() {
   const wrap = document.querySelector("#swatches");
   wrap.innerHTML = "";
-  const names = ["포인트", "보조", "강조", "면", "글자"];
-  state.colors.forEach((color, index) => {
-    const label = document.createElement("label");
-    label.className = "swatch";
-    label.innerHTML = `${names[index]}<input type="color" value="${color}">`;
-    label.querySelector("input").addEventListener("input", (event) => {
-      state.colors[index] = event.target.value;
-      draw();
-    });
-    wrap.append(label);
+
+  const pickerLabel = document.createElement("label");
+  pickerLabel.className = "swatch swatch-main";
+  pickerLabel.innerHTML = `기준 컬러<input type="color" value="${state.baseColor}">`;
+  pickerLabel.querySelector("input").addEventListener("input", (event) => {
+    state.baseColor = event.target.value;
+    renderSwatches();
+    draw();
+  });
+  wrap.append(pickerLabel);
+
+  const palette = generatePalette(state.baseColor);
+  const names = ["포인트", "보조", "강조", "배경", "글자"];
+  palette.forEach((color, index) => {
+    const chip = document.createElement("div");
+    chip.className = "tone-chip";
+    chip.innerHTML = `<span style="background:${color}"></span><small>${names[index]}</small>`;
+    wrap.append(chip);
   });
 }
 
@@ -211,7 +219,7 @@ function drawSheet() {
   drawText(metaText(), 130, 215, 24, 760, 700, "left", theme.text);
   drawText(state.credit || "@credit", 1380, 150, 22, 220, 700, "right", theme.muted);
 
-  state.colors.forEach((color, index) => {
+  theme.palette.forEach((color, index) => {
     ctx.beginPath();
     ctx.arc(1290 + index * 48, 205, 18, 0, Math.PI * 2);
     ctx.fillStyle = color;
@@ -356,13 +364,14 @@ function drawWrapped(text, x, y, size, maxWidth, lineHeight, weight = 700, color
 }
 
 function getTheme() {
-  const [primary, secondary, accent, surface, text] = state.colors;
+  const [primary, secondary, accent, surface, text] = generatePalette(state.baseColor);
   return {
     primary,
     secondary,
     accent,
     surface,
     text,
+    palette: [primary, secondary, accent, surface, text],
     background: mix(surface, secondary, 0.16),
     header: mix(surface, secondary, 0.24),
     line: mix(surface, primary, 0.18),
@@ -370,6 +379,55 @@ function getTheme() {
     muted: mix(text, primary, 0.45),
     shadow: hexToRgba(primary, 0.14),
   };
+}
+
+function generatePalette(baseColor) {
+  const hsl = hexToHsl(baseColor);
+  const isDark = hsl.l < 0.38;
+  const isVeryLight = hsl.l > 0.78;
+  const primary = hslToHex(hsl.h, clamp(hsl.s * 0.9, 0.24, 0.72), clamp(hsl.l, 0.28, 0.58));
+  const secondary = hslToHex(hsl.h, clamp(hsl.s * 0.55, 0.18, 0.48), isDark ? 0.78 : 0.84);
+  const accentHue = (hsl.h + 28) % 360;
+  const accent = hslToHex(accentHue, clamp(hsl.s * 0.65, 0.22, 0.58), isVeryLight ? 0.72 : 0.76);
+  const surface = hslToHex(hsl.h, clamp(hsl.s * 0.12, 0.03, 0.12), 0.985);
+  const text = isDark ? "#1c1b1f" : hslToHex(hsl.h, clamp(hsl.s * 0.28, 0.08, 0.28), 0.16);
+  return [primary, secondary, accent, surface, text];
+}
+
+function hexToHsl(hex) {
+  const [r, g, b] = hexToRgb(hex).map((value) => value / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+    if (max === g) h = (b - r) / d + 2;
+    if (max === b) h = (r - g) / d + 4;
+    h *= 60;
+  }
+  return { h, s, l };
+}
+
+function hslToHex(h, s, l) {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  const m = l - c / 2;
+  let rgb = [0, 0, 0];
+  if (h < 60) rgb = [c, x, 0];
+  else if (h < 120) rgb = [x, c, 0];
+  else if (h < 180) rgb = [0, c, x];
+  else if (h < 240) rgb = [0, x, c];
+  else if (h < 300) rgb = [x, 0, c];
+  else rgb = [c, 0, x];
+  return rgbToHex(rgb.map((value) => Math.round((value + m) * 255)));
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function mix(a, b, amount) {
