@@ -239,7 +239,7 @@ function drawSheet() {
   ctx.fillRect(70, 88, 1460, 162);
   roundRect(125, 184, 680, 10, 6, theme.line);
 
-  drawText(state.name || "CHARACTER NAME", 125, 150, 58, 720, 900, "left", theme.primary);
+  drawText(state.name || "CHARACTER NAME", 125, 150, 58, 720, 700, "left", theme.primary, "KoPub Batang");
   drawText(metaText(), 130, 218, 22, 760, 700, "left", theme.text);
   drawText(state.credit || "@credit", 1380, 150, 22, 220, 700, "right", theme.muted);
 
@@ -254,9 +254,9 @@ function drawSheet() {
 
   softCard(730, 600, 300, 320, 18, theme.surface, theme.shadow);
   softCard(1060, 600, 300, 320, 18, theme.surface, theme.shadow);
-  drawText("헤어 & 얼굴", 760, 650, 29, 240, 900, "left", theme.text);
+  drawText("헤어 & 얼굴", 760, 650, 29, 240, 900, "left", theme.text, "Pretendard");
   drawWrapped(state.summary || "외관 특징을 입력하세요.", 760, 705, 24, 230, 34, 700, theme.text);
-  drawText("의상 & 기타", 1090, 650, 29, 240, 900, "left", theme.text);
+  drawText("의상 & 기타", 1090, 650, 29, 240, 900, "left", theme.text, "Pretendard");
   drawWrapped(clampText(state.memo || "의상과 소품 설명을 입력하세요.", 62), 1090, 705, 22, 230, 31, 700, theme.text);
 
   roundRect(755, 1012, 430, 12, 6, theme.secondary);
@@ -353,9 +353,9 @@ function pathRoundRect(x, y, w, h, r) {
   ctx.quadraticCurveTo(x, y, x + r, y);
 }
 
-function drawText(text, x, y, size, maxWidth, weight = 700, align = "left", color = "#1c1b1f") {
+function drawText(text, x, y, size, maxWidth, weight = 700, align = "left", color = "#1c1b1f", family = "Pretendard") {
   ctx.save();
-  ctx.font = `${weight} ${size}px "SUIT", "Malgun Gothic", sans-serif`;
+  ctx.font = `${weight} ${size}px "${family}", "Malgun Gothic", sans-serif`;
   ctx.textAlign = align;
   ctx.textBaseline = "middle";
   ctx.fillStyle = color;
@@ -365,7 +365,7 @@ function drawText(text, x, y, size, maxWidth, weight = 700, align = "left", colo
 
 function drawWrapped(text, x, y, size, maxWidth, lineHeight, weight = 700, color = "#1c1b1f") {
   ctx.save();
-  ctx.font = `${weight} ${size}px "SUIT", "Malgun Gothic", sans-serif`;
+  ctx.font = `${weight} ${size}px "Pretendard", "Malgun Gothic", sans-serif`;
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
   ctx.fillStyle = color;
