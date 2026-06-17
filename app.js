@@ -2,80 +2,39 @@ const canvas = document.querySelector("#sheet");
 const ctx = canvas.getContext("2d");
 const picker = document.querySelector("#imagePicker");
 
-const templates = {
-  grid: { label: "파스텔 블루 자료표", width: 1600, height: 1200 },
-  paper: { label: "종이 자료틀", width: 1024, height: 1024 },
+const slots = {
+  main: { label: "메인 전신", x: 160, y: 345, w: 520, h: 650, r: 28 },
+  outfit: { label: "의상", x: 730, y: 345, w: 220, h: 220, r: 24 },
+  face: { label: "얼굴", x: 985, y: 345, w: 220, h: 220, r: 24 },
+  expression: { label: "표정", x: 1240, y: 345, w: 220, h: 220, r: 24 },
 };
 
-const slotNames = {
-  main: "메인 전신",
-  outfit: "기본 의상",
-  face: "얼굴",
-  expression: "표정",
-  shoes: "신발",
-  detailA: "디테일 A",
-  detailB: "디테일 B",
-  chibi: "SD/미니",
-};
-
-const defaults = {
-  template: "grid",
-  name: "미야 밍",
-  age: "중국",
-  height: "156cm",
-  gender: "여성",
-  summary: "활발한 | 노력하는 | 성실한 | 속이 깊은 | 솔직한 정이 많은",
-  features: "정별 + 흑발 브릿지 + 백안 + XX특이동공 | 숏컷 + 어깨 살짝 넘는 옆머리 | 파란 보석이 붙어있는 하얀 리본\n짧잔 B컵 | 내려간 눈썹 + 올라간 눈매 + 웃는 상",
-  memo: "기본 의상은 왼쪽 상단의 의상 디자인을 따라주세요! 신발은 검은 워커입니다.\n의상 오마카세 + 정해져 있는 경우 테마컬러를 사용해주세요!!!",
-  keywords: "바다, 파도, 리본",
-  credit: "@식샤님",
-  colors: ["#000000", "#315bd6", "#ffffff", "#17213b", "#fff5f0"],
-  bgColor: "#315bd6",
-  accentColor: "#315bd6",
-  paperNoise: 0.18,
+const state = {
+  name: "",
+  age: "",
+  height: "",
+  gender: "",
+  keywords: "",
+  credit: "",
+  summary: "",
+  memo: "",
+  colors: ["#5d5696", "#c7bfff", "#f4abdb", "#ffffff", "#1c1b1f"],
   images: {},
-  stickers: [],
 };
 
-let state = structuredClone(defaults);
 let selectedSlot = "main";
 let pendingSlot = null;
-let selectedSticker = null;
 let drag = null;
 
-function initImages() {
-  Object.keys(slotNames).forEach((id) => {
-    if (!state.images[id]) {
-      state.images[id] = { src: "", zoom: 1, x: 0, y: 0, mode: "fill" };
-    }
+function init() {
+  Object.keys(slots).forEach((id) => {
+    state.images[id] = { src: "", img: null, zoom: 1, x: 0, y: 0, mode: "fill" };
   });
-}
 
-function bindInputs() {
-  ["template", "name", "age", "height", "gender", "summary", "features", "memo", "keywords", "credit"].forEach((id) => {
-    const el = document.querySelector(`#${id}`);
-    el.value = state[id];
-    el.addEventListener("input", () => {
-      state[id] = el.value;
-      if (id === "template") resizeCanvas();
+  ["name", "age", "height", "gender", "keywords", "credit", "summary", "memo"].forEach((id) => {
+    document.querySelector(`#${id}`).addEventListener("input", (event) => {
+      state[id] = event.target.value;
       draw();
-    });
-  });
-
-  ["bgColor", "accentColor", "paperNoise"].forEach((id) => {
-    const el = document.querySelector(`#${id}`);
-    el.value = state[id];
-    el.addEventListener("input", () => {
-      state[id] = id === "paperNoise" ? Number(el.value) : el.value;
-      draw();
-    });
-  });
-
-  document.querySelectorAll(".tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
-      document.querySelectorAll(".tab, .pane").forEach((item) => item.classList.remove("active"));
-      tab.classList.add("active");
-      document.querySelector(`#${tab.dataset.tab}Pane`).classList.add("active");
     });
   });
 
@@ -86,43 +45,33 @@ function bindInputs() {
   document.querySelector("#fillImage").addEventListener("click", () => setImageMode("fill"));
   document.querySelector("#clearImage").addEventListener("click", clearSelectedImage);
   document.querySelector("#exportPng").addEventListener("click", exportPng);
-  document.querySelector("#addSticker").addEventListener("click", addSticker);
-  document.querySelector("#deleteSticker").addEventListener("click", deleteSticker);
-  document.querySelector("#clearStickers").addEventListener("click", clearStickers);
-  document.querySelector("#saveSlot").addEventListener("click", saveSlot);
-  document.querySelector("#loadSlot").addEventListener("click", loadSlot);
-  document.querySelector("#downloadJson").addEventListener("click", downloadJson);
-  document.querySelector("#importJson").addEventListener("change", importJson);
-  document.querySelector("#resetAll").addEventListener("click", resetAll);
-  document.querySelector("#prevTemplate").addEventListener("click", toggleTemplate);
-  document.querySelector("#nextTemplate").addEventListener("click", toggleTemplate);
-
   picker.addEventListener("change", importImage);
-  canvas.addEventListener("pointerdown", pointerDown);
-  canvas.addEventListener("pointermove", pointerMove);
-  canvas.addEventListener("pointerup", pointerUp);
-  canvas.addEventListener("pointerleave", pointerUp);
+
   canvas.addEventListener("dblclick", openClickedSlot);
-  window.addEventListener("keydown", (event) => {
-    if (event.key === "Delete" && selectedSticker) deleteSticker();
-  });
+  canvas.addEventListener("pointerdown", startDrag);
+  canvas.addEventListener("pointermove", moveDrag);
+  canvas.addEventListener("pointerup", stopDrag);
+  canvas.addEventListener("pointerleave", stopDrag);
+
+  renderSlots();
+  renderSwatches();
+  syncAdjust();
+  draw();
+  document.fonts?.ready.then(draw);
 }
 
 function renderSlots() {
   const list = document.querySelector("#slotList");
   list.innerHTML = "";
-  Object.entries(slotNames).forEach(([id, label]) => {
-    const card = document.createElement("div");
+  Object.entries(slots).forEach(([id, slot]) => {
+    const card = document.createElement("button");
     card.className = `slot-card ${id === selectedSlot ? "active" : ""}`;
-    card.innerHTML = `<div><div class="slot-title">${label}</div><div class="slot-meta">${state.images[id].src ? "이미지 있음" : "비어 있음"}</div></div>`;
-    const button = document.createElement("button");
-    button.textContent = "업로드";
-    button.addEventListener("click", () => {
+    card.type = "button";
+    card.innerHTML = `<span>${slot.label}</span><small>${state.images[id].src ? "이미지 있음" : "업로드"}</small>`;
+    card.addEventListener("click", () => {
       selectSlot(id);
       requestImage(id);
     });
-    card.addEventListener("click", () => selectSlot(id));
-    card.append(button);
     list.append(card);
   });
 }
@@ -142,455 +91,40 @@ function renderSwatches() {
   });
 }
 
-function resizeCanvas() {
-  const template = templates[state.template];
-  canvas.width = template.width;
-  canvas.height = template.height;
-  document.querySelector("#canvasLabel").textContent = template.label;
-  document.querySelector("#template").value = state.template;
-  draw();
-}
-
-function getLayout() {
-  if (state.template === "paper") {
-    return {
-      chibi: { x: 74, y: 98, w: 230, h: 485, shape: "free" },
-      main: { x: 436, y: 80, w: 494, h: 494, r: 96, shape: "roundRect" },
-      outfit: { x: 436, y: 650, w: 494, h: 362, shape: "rect" },
-    };
-  }
-  return {
-    main: { x: 160, y: 345, w: 520, h: 650, r: 28, shape: "roundRect" },
-    outfit: { x: 730, y: 345, w: 220, h: 220, r: 24, shape: "roundRect" },
-    face: { x: 985, y: 345, w: 220, h: 220, r: 24, shape: "roundRect" },
-    expression: { x: 1240, y: 345, w: 220, h: 220, r: 24, shape: "roundRect" },
-    shoes: { x: 730, y: 705, w: 300, h: 250, r: 24, shape: "roundRect" },
-    detailA: { x: 1060, y: 705, w: 300, h: 250, r: 24, shape: "roundRect" },
-    detailB: { x: 1380, y: 705, w: 0, h: 0, r: 24, shape: "roundRect" },
-  };
-}
-
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  if (state.template === "paper") drawPaperTemplate();
-  else drawGridTemplate();
-  drawStickers();
-}
-
-function drawGridTemplate() {
-  ctx.fillStyle = "#fcf8fe";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  softCard(70, 88, 1460, 1028, 34);
-  ctx.fillStyle = "#f7f3fb";
-  ctx.fillRect(70, 88, 1460, 145);
-  ctx.fillStyle = "#5d5696";
-  ctx.globalAlpha = 0.1;
-  ctx.fillRect(125, 180, 680, 10);
-  ctx.globalAlpha = 1;
-
-  const layout = getLayout();
-  ["main", "outfit", "face", "expression", "shoes", "detailA"].forEach((id) => drawImageSlot(id, layout[id]));
-
-  drawText(state.name || "CHARACTER NAME", 125, 150, 58, 720, "900", "left", "#766fb0");
-  drawText(`Age: ${state.age || "--"}    Height: ${state.height || "--"}    Gender: ${state.gender || "--"}`, 130, 215, 24, 760, "700", "left", "#1c1b1f");
-  drawText(state.credit || "@credit", 1380, 150, 22, 220, "700", "right", "#5f5b75");
-
-  state.colors.slice(0, 5).forEach((color, index) => {
-    ctx.beginPath();
-    ctx.arc(1290 + index * 48, 205, 18, 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.fill();
-  });
-
-  softCard(730, 600, 300, 320, 18);
-  softCard(1060, 600, 300, 320, 18);
-  drawText("헤어 & 얼굴", 760, 650, 29, 240, "900", "left", "#1c1b1f");
-  drawWrapped(state.summary || "외관 특징을 입력하세요.", 760, 705, 24, 230, 34, "700");
-  drawText("의상 & 기타", 1090, 650, 29, 240, "900", "left", "#1c1b1f");
-  drawWrapped(clampText(state.memo || "의상과 소품 설명을 입력하세요.", 62), 1090, 705, 22, 230, 31, "700");
-
-  ctx.fillStyle = "#c7bfff";
-  roundRect(755, 1012, 430, 12, 6, "#c7bfff");
-  drawText(hashKeywords(state.keywords), 125, 1056, 26, 650, "800", "left", "#787581");
-}
-
-function drawPaperTemplate() {
-  ctx.fillStyle = "#f7f7f3";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  drawPaperNoise();
-  Object.entries(getLayout()).forEach(([id, rect]) => drawImageSlot(id, rect));
-  state.colors.slice(0, 4).forEach((color, index) => {
-    const x = 322;
-    const y = 124 + index * 108;
-    ctx.fillStyle = color;
-    ctx.fillRect(x, y, 82, 84);
-    ctx.strokeStyle = "#111";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x, y, 82, 84);
-  });
-  drawText("캐릭터 한 줄 요약", 683, 627, 39, 470, "900", "center");
-  drawWrapped(state.summary, 436, 682, 24, 494, 32, "900", "center");
-  drawWrapped(hashLines(state.features), 80, 745, 34, 310, 42, "900");
-  drawText(`동물화: ${state.keywords.split(",")[0] || ""}`, 82, 900, 24, 300, "800");
-  drawText(`오브젝트: ${state.keywords.split(",").slice(1).join(",").trim()}`, 82, 935, 24, 300, "800");
-  drawWrapped(state.memo, 462, 720, 25, 430, 38, "800", "center");
-}
-
-function drawGrid(x, y, w, h, step, color) {
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.globalAlpha = 0.85;
-  ctx.lineWidth = 2;
-  ctx.setLineDash([10, 7]);
-  for (let gx = x; gx <= x + w; gx += step) {
-    line(gx, y, gx, y + h);
-  }
-  for (let gy = y; gy <= y + h; gy += step) {
-    line(x, gy, x + w, gy);
-  }
-  ctx.restore();
-}
-
-function drawPaperNoise() {
-  ctx.save();
-  ctx.globalAlpha = Number(state.paperNoise);
-  for (let i = 0; i < 120; i += 1) {
-    ctx.strokeStyle = i % 2 ? "#d9d5ce" : "#ffffff";
-    ctx.lineWidth = 1 + seeded(i, 9) * 2;
-    const x = seeded(i, 17) * canvas.width;
-    const y = seeded(i, 31) * canvas.height;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.bezierCurveTo(x + 40, y - 20, x + 80, y + 30, x + 150, y - 10);
-    ctx.stroke();
-  }
-  ctx.restore();
-}
-
-function seeded(a, b) {
-  return Math.abs(Math.sin(a * 91.7 + b * 13.3) * 10000) % 1;
-}
-
-function drawImageSlot(id, rect) {
-  ctx.save();
-  clipShape(rect);
-  if (rect.shape === "free") {
-    ctx.globalAlpha = 0;
-    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-    ctx.globalAlpha = 1;
-  } else {
-    ctx.fillStyle = state.template === "paper" ? "#000" : "#fff";
-    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-  }
-  const data = state.images[id];
-  if (data?.img) drawFittedImage(data.img, rect, data);
-  else drawEmptySlot(rect, slotNames[id]);
-  ctx.restore();
-
-  if (rect.label) drawText(rect.label, rect.x + rect.w - 10, rect.y + rect.h - 18, 28, 180, "900", "right", "#fff", true);
-}
-
-function drawEmptySlot(rect, label) {
-  ctx.fillStyle = state.template === "paper" ? "#050505" : "#f9faf8";
-  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-  ctx.fillStyle = state.template === "paper" ? "#fff" : "#404653";
-  drawText(label, rect.x + rect.w / 2, rect.y + rect.h / 2 - 12, 25, rect.w - 42, "900", "center");
-  if (state.template !== "paper") {
-    drawText("이미지 업로드", rect.x + rect.w / 2, rect.y + rect.h / 2 + 24, 18, rect.w - 42, "700", "center", "#8a92a3");
-  }
-}
-
-function drawFittedImage(img, rect, data) {
-  const base = data.mode === "fit"
-    ? Math.min(rect.w / img.width, rect.h / img.height)
-    : Math.max(rect.w / img.width, rect.h / img.height);
-  const scale = base * data.zoom;
-  const w = img.width * scale;
-  const h = img.height * scale;
-  const x = rect.x + rect.w / 2 - w / 2 + data.x;
-  const y = rect.y + rect.h / 2 - h / 2 + data.y;
-  ctx.drawImage(img, x, y, w, h);
-}
-
-function drawStickers() {
-  state.stickers.forEach((sticker) => {
-    drawText(sticker.text, sticker.x, sticker.y, sticker.size, 420, "900", "center", sticker.color || "#111", true);
-    if (selectedSticker === sticker.id) {
-      ctx.strokeStyle = "#ffcf33";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(sticker.x - 90, sticker.y - sticker.size, 180, sticker.size + 12);
-    }
-  });
-}
-
-function clipShape(rect) {
-  ctx.beginPath();
-  if (rect.shape === "circle") ctx.arc(rect.x + rect.w / 2, rect.y + rect.h / 2, rect.w / 2, 0, Math.PI * 2);
-  else if (rect.shape === "roundRect") pathRoundRect(rect.x, rect.y, rect.w, rect.h, rect.r);
-  else ctx.rect(rect.x, rect.y, rect.w, rect.h);
-  ctx.clip();
-}
-
-function strokeShape(rect) {
-  ctx.beginPath();
-  if (rect.shape === "circle") ctx.arc(rect.x + rect.w / 2, rect.y + rect.h / 2, rect.w / 2, 0, Math.PI * 2);
-  else if (rect.shape === "roundRect") pathRoundRect(rect.x, rect.y, rect.w, rect.h, rect.r);
-  else ctx.rect(rect.x, rect.y, rect.w, rect.h);
-  ctx.stroke();
-}
-
-function roundRect(x, y, w, h, r, fill) {
-  ctx.beginPath();
-  pathRoundRect(x, y, w, h, r);
-  ctx.fillStyle = fill;
-  ctx.fill();
-}
-
-function roundStroke(x, y, w, h, r, fill, stroke, lineWidth = 3) {
-  ctx.beginPath();
-  pathRoundRect(x, y, w, h, r);
-  ctx.fillStyle = fill;
-  ctx.fill();
-  ctx.strokeStyle = stroke;
-  ctx.lineWidth = lineWidth;
-  ctx.stroke();
-}
-
-function softCard(x, y, w, h, r) {
-  ctx.save();
-  ctx.shadowColor = "rgba(69, 104, 150, 0.12)";
-  ctx.shadowBlur = 18;
-  ctx.shadowOffsetY = 8;
-  roundRect(x, y, w, h, r, "#fff");
-  ctx.restore();
-}
-
-function pathRoundRect(x, y, w, h, r) {
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-}
-
-function line(x1, y1, x2, y2) {
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.stroke();
-}
-
-function drawText(text, x, y, size, maxWidth, weight = "700", align = "left", color = "#111", outline = false) {
-  ctx.save();
-  ctx.font = `${weight} ${size}px "Suit", "Malgun Gothic", sans-serif`;
-  ctx.textAlign = align;
-  ctx.textBaseline = "middle";
-  if (outline) {
-    ctx.lineWidth = Math.max(4, size / 6);
-    ctx.strokeStyle = color === "#fff" ? "#111" : "#fff";
-    ctx.strokeText(text, x, y, maxWidth);
-  }
-  ctx.fillStyle = color;
-  ctx.fillText(text, x, y, maxWidth);
-  ctx.restore();
-}
-
-function drawWrapped(text, x, y, size, maxWidth, lineHeight, weight = "700", align = "left") {
-  ctx.save();
-  ctx.font = `${weight} ${size}px "Suit", "Malgun Gothic", sans-serif`;
-  ctx.textAlign = align;
-  ctx.textBaseline = "top";
-  ctx.fillStyle = "#111";
-  const baseX = align === "center" ? x + maxWidth / 2 : align === "right" ? x + maxWidth : x;
-  String(text).split("\n").forEach((paragraph) => {
-    let lineText = "";
-    paragraph.split(" ").flatMap((word) => splitLongWord(word, maxWidth)).forEach((word) => {
-      const trial = lineText ? `${lineText} ${word}` : word;
-      if (ctx.measureText(trial).width > maxWidth && lineText) {
-        ctx.fillText(lineText, baseX, y, maxWidth);
-        y += lineHeight;
-        lineText = word;
-      } else {
-        lineText = trial;
-      }
-    });
-    ctx.fillText(lineText, baseX, y, maxWidth);
-    y += lineHeight;
-  });
-  ctx.restore();
-}
-
-function splitLongWord(word, maxWidth) {
-  if (ctx.measureText(word).width <= maxWidth) return [word];
-  const pieces = [];
-  let current = "";
-  [...word].forEach((char) => {
-    if (ctx.measureText(current + char).width > maxWidth && current) {
-      pieces.push(current);
-      current = char;
-    } else {
-      current += char;
-    }
-  });
-  if (current) pieces.push(current);
-  return pieces;
-}
-
-function hashLines(text) {
-  return String(text).split(/\n|\|/).map((line) => line.trim()).filter(Boolean).slice(0, 3).map((line) => `#${line}`).join("\n");
-}
-
-function hashKeywords(text) {
-  const words = String(text).split(/,|\s/).map((word) => word.trim()).filter(Boolean).slice(0, 3);
-  return words.length ? words.map((word) => `#${word}`).join("  ") : "#키워드  #키워드  #키워드";
-}
-
-function clampText(text, maxLength) {
-  const normalized = String(text).replace(/\s+/g, " ").trim();
-  return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}...` : normalized;
-}
-
-function drawSimpleSilhouette() {
-  if (state.images.main?.src) return;
-  ctx.save();
-  ctx.fillStyle = "#5a7fb8";
-  ctx.beginPath();
-  ctx.ellipse(235, 205, 70, 88, -0.08, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillRect(185, 285, 95, 265);
-  ctx.beginPath();
-  ctx.moveTo(185, 285);
-  ctx.lineTo(125, 520);
-  ctx.quadraticCurveTo(110, 610, 160, 650);
-  ctx.lineTo(238, 470);
-  ctx.closePath();
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(280, 285);
-  ctx.lineTo(350, 630);
-  ctx.quadraticCurveTo(330, 665, 300, 650);
-  ctx.lineTo(235, 470);
-  ctx.closePath();
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(178, 548);
-  ctx.lineTo(230, 548);
-  ctx.lineTo(215, 900);
-  ctx.quadraticCurveTo(190, 932, 170, 895);
-  ctx.closePath();
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(245, 548);
-  ctx.lineTo(295, 548);
-  ctx.lineTo(345, 900);
-  ctx.quadraticCurveTo(322, 940, 292, 905);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-}
-
-function canvasPoint(event) {
-  const rect = canvas.getBoundingClientRect();
-  return {
-    x: (event.clientX - rect.left) * (canvas.width / rect.width),
-    y: (event.clientY - rect.top) * (canvas.height / rect.height),
-  };
-}
-
-function hitSlot(point) {
-  return Object.entries(getLayout()).find(([, rect]) => point.x >= rect.x && point.x <= rect.x + rect.w && point.y >= rect.y && point.y <= rect.y + rect.h)?.[0];
-}
-
-function hitSticker(point) {
-  return [...state.stickers].reverse().find((sticker) => Math.abs(point.x - sticker.x) < 120 && Math.abs(point.y - sticker.y) < sticker.size);
-}
-
-function pointerDown(event) {
-  const point = canvasPoint(event);
-  const sticker = hitSticker(point);
-  if (sticker) {
-    selectedSticker = sticker.id;
-    drag = { type: "sticker", start: point, id: sticker.id, x: sticker.x, y: sticker.y };
-    draw();
-    return;
-  }
-  const slot = hitSlot(point);
-  if (slot) {
-    selectSlot(slot);
-    drag = { type: "image", start: point, id: slot, x: state.images[slot].x, y: state.images[slot].y };
-  } else {
-    selectedSticker = null;
-    draw();
-  }
-}
-
-function pointerMove(event) {
-  if (!drag) return;
-  const point = canvasPoint(event);
-  const dx = point.x - drag.start.x;
-  const dy = point.y - drag.start.y;
-  if (drag.type === "image" && state.images[drag.id].src) {
-    state.images[drag.id].x = Math.round(drag.x + dx);
-    state.images[drag.id].y = Math.round(drag.y + dy);
-    syncAdjust();
-  }
-  if (drag.type === "sticker") {
-    const sticker = state.stickers.find((item) => item.id === drag.id);
-    sticker.x = Math.round(drag.x + dx);
-    sticker.y = Math.round(drag.y + dy);
-  }
-  draw();
-}
-
-function pointerUp() {
-  drag = null;
-}
-
-function openClickedSlot(event) {
-  const slot = hitSlot(canvasPoint(event));
-  if (slot) requestImage(slot);
-}
-
 function selectSlot(id) {
   selectedSlot = id;
-  selectedSticker = null;
-  syncAdjust();
   renderSlots();
-  draw();
+  syncAdjust();
 }
 
 function syncAdjust() {
-  const data = state.images[selectedSlot];
-  document.querySelector("#selectedName").textContent = `선택된 이미지: ${slotNames[selectedSlot]}`;
-  document.querySelector("#zoom").value = data.zoom;
-  document.querySelector("#offsetX").value = data.x;
-  document.querySelector("#offsetY").value = data.y;
+  const image = state.images[selectedSlot];
+  document.querySelector("#selectedName").textContent = `선택된 이미지: ${slots[selectedSlot].label}`;
+  document.querySelector("#zoom").value = image.zoom;
+  document.querySelector("#offsetX").value = image.x;
+  document.querySelector("#offsetY").value = image.y;
 }
 
 function updateSelectedImage() {
-  const data = state.images[selectedSlot];
-  data.zoom = Number(document.querySelector("#zoom").value);
-  data.x = Number(document.querySelector("#offsetX").value);
-  data.y = Number(document.querySelector("#offsetY").value);
+  const image = state.images[selectedSlot];
+  image.zoom = Number(document.querySelector("#zoom").value);
+  image.x = Number(document.querySelector("#offsetX").value);
+  image.y = Number(document.querySelector("#offsetY").value);
   draw();
 }
 
 function setImageMode(mode) {
-  state.images[selectedSlot].mode = mode;
-  state.images[selectedSlot].zoom = 1;
-  state.images[selectedSlot].x = 0;
-  state.images[selectedSlot].y = 0;
+  const image = state.images[selectedSlot];
+  image.mode = mode;
+  image.zoom = 1;
+  image.x = 0;
+  image.y = 0;
   syncAdjust();
   draw();
 }
 
 function clearSelectedImage() {
-  state.images[selectedSlot] = { src: "", zoom: 1, x: 0, y: 0, mode: "fill" };
+  state.images[selectedSlot] = { src: "", img: null, zoom: 1, x: 0, y: 0, mode: "fill" };
   renderSlots();
   syncAdjust();
   draw();
@@ -607,148 +141,210 @@ function importImage(event) {
   if (!file || !pendingSlot) return;
   const reader = new FileReader();
   reader.onload = () => {
-    const image = new Image();
-    image.onload = () => {
-      state.images[pendingSlot] = { src: reader.result, img: image, zoom: 1, x: 0, y: 0, mode: "fill" };
+    const img = new Image();
+    img.onload = () => {
+      state.images[pendingSlot] = { src: reader.result, img, zoom: 1, x: 0, y: 0, mode: "fill" };
       selectSlot(pendingSlot);
       pendingSlot = null;
+      draw();
     };
-    image.src = reader.result;
+    img.src = reader.result;
   };
   reader.readAsDataURL(file);
 }
 
-function addSticker() {
-  state.stickers.push({
-    id: crypto.randomUUID(),
-    text: document.querySelector("#stickerText").value || "TEXT",
-    size: Number(document.querySelector("#stickerSize").value) || 34,
-    x: canvas.width * 0.75,
-    y: canvas.height * 0.35,
-    color: "#111111",
+function openClickedSlot(event) {
+  const id = hitSlot(canvasPoint(event));
+  if (id) {
+    selectSlot(id);
+    requestImage(id);
+  }
+}
+
+function startDrag(event) {
+  const point = canvasPoint(event);
+  const id = hitSlot(point);
+  if (!id) return;
+  selectSlot(id);
+  const image = state.images[id];
+  if (!image.src) return;
+  drag = { id, start: point, x: image.x, y: image.y };
+}
+
+function moveDrag(event) {
+  if (!drag) return;
+  const point = canvasPoint(event);
+  const image = state.images[drag.id];
+  image.x = Math.round(drag.x + point.x - drag.start.x);
+  image.y = Math.round(drag.y + point.y - drag.start.y);
+  syncAdjust();
+  draw();
+}
+
+function stopDrag() {
+  drag = null;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawSheet();
+}
+
+function drawSheet() {
+  ctx.fillStyle = "#fcf8fe";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  softCard(70, 88, 1460, 1028, 34);
+  ctx.fillStyle = "#f7f3fb";
+  ctx.fillRect(70, 88, 1460, 145);
+  roundRect(125, 180, 680, 10, 6, "#e4dfff");
+
+  drawText(state.name || "CHARACTER NAME", 125, 150, 58, 720, 900, "left", "#766fb0");
+  drawText(metaText(), 130, 215, 24, 760, 700, "left", "#1c1b1f");
+  drawText(state.credit || "@credit", 1380, 150, 22, 220, 700, "right", "#5f5b75");
+
+  state.colors.forEach((color, index) => {
+    ctx.beginPath();
+    ctx.arc(1290 + index * 48, 205, 18, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
   });
-  selectedSticker = state.stickers.at(-1).id;
-  draw();
+
+  Object.entries(slots).forEach(([id, slot]) => drawImageSlot(id, slot));
+
+  softCard(730, 600, 300, 320, 18);
+  softCard(1060, 600, 300, 320, 18);
+  drawText("헤어 & 얼굴", 760, 650, 29, 240, 900, "left", "#1c1b1f");
+  drawWrapped(state.summary || "외관 특징을 입력하세요.", 760, 705, 24, 230, 34, 700);
+  drawText("의상 & 기타", 1090, 650, 29, 240, 900, "left", "#1c1b1f");
+  drawWrapped(clampText(state.memo || "의상과 소품 설명을 입력하세요.", 62), 1090, 705, 22, 230, 31, 700);
+
+  roundRect(755, 1012, 430, 12, 6, "#c7bfff");
+  drawText(hashKeywords(state.keywords), 125, 1056, 26, 650, 800, "left", "#787581");
 }
 
-function deleteSticker() {
-  if (!selectedSticker) return;
-  state.stickers = state.stickers.filter((item) => item.id !== selectedSticker);
-  selectedSticker = null;
-  draw();
+function drawImageSlot(id, slot) {
+  ctx.save();
+  pathRoundRect(slot.x, slot.y, slot.w, slot.h, slot.r);
+  ctx.clip();
+  ctx.fillStyle = "#fbfafc";
+  ctx.fillRect(slot.x, slot.y, slot.w, slot.h);
+
+  const image = state.images[id];
+  if (image?.img) {
+    drawFittedImage(image.img, slot, image);
+  } else {
+    drawText(slot.label, slot.x + slot.w / 2, slot.y + slot.h / 2 - 12, 24, slot.w - 36, 800, "center", "#1c1b1f");
+    drawText("이미지 업로드", slot.x + slot.w / 2, slot.y + slot.h / 2 + 24, 17, slot.w - 36, 600, "center", "#787581");
+  }
+  ctx.restore();
 }
 
-function clearStickers() {
-  state.stickers = [];
-  selectedSticker = null;
-  draw();
+function drawFittedImage(img, slot, image) {
+  const base = image.mode === "fit"
+    ? Math.min(slot.w / img.width, slot.h / img.height)
+    : Math.max(slot.w / img.width, slot.h / img.height);
+  const scale = base * image.zoom;
+  const w = img.width * scale;
+  const h = img.height * scale;
+  ctx.drawImage(img, slot.x + slot.w / 2 - w / 2 + image.x, slot.y + slot.h / 2 - h / 2 + image.y, w, h);
 }
 
 function exportPng() {
-  const previousSlot = selectedSlot;
-  selectedSticker = null;
-  selectedSlot = null;
-  draw();
   const link = document.createElement("a");
-  link.download = `${state.name || "외관표"}.png`;
+  link.download = `${state.name || "WHAT_ET"}.png`;
   link.href = canvas.toDataURL("image/png");
   link.click();
-  selectedSlot = previousSlot;
-  draw();
 }
 
-function cleanState() {
-  const copy = structuredClone(state);
-  Object.values(copy.images).forEach((image) => delete image.img);
-  return copy;
+function metaText() {
+  return `Age: ${state.age || "--"}    Height: ${state.height || "--"}    Gender: ${state.gender || "--"}`;
 }
 
-function saveSlot() {
-  localStorage.setItem("oc-sheet-maker-slot", JSON.stringify(cleanState()));
-  alert("슬롯에 저장했어요.");
+function hashKeywords(text) {
+  const words = String(text).split(/,|\s/).map((word) => word.trim()).filter(Boolean).slice(0, 3);
+  return words.length ? words.map((word) => `#${word}`).join("  ") : "#keyword  #keyword  #keyword";
 }
 
-function loadSlot() {
-  const raw = localStorage.getItem("oc-sheet-maker-slot");
-  if (!raw) {
-    alert("저장된 슬롯이 없어요.");
-    return;
-  }
-  applyLoaded(JSON.parse(raw));
+function clampText(text, maxLength) {
+  const normalized = String(text).replace(/\s+/g, " ").trim();
+  return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}...` : normalized;
 }
 
-function downloadJson() {
-  const blob = new Blob([JSON.stringify(cleanState(), null, 2)], { type: "application/json" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `${state.name || "외관표"}-작업파일.json`;
-  link.click();
-  URL.revokeObjectURL(link.href);
+function canvasPoint(event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (event.clientX - rect.left) * (canvas.width / rect.width),
+    y: (event.clientY - rect.top) * (canvas.height / rect.height),
+  };
 }
 
-function importJson(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => applyLoaded(JSON.parse(reader.result));
-  reader.readAsText(file);
+function hitSlot(point) {
+  return Object.entries(slots).find(([, slot]) => (
+    point.x >= slot.x && point.x <= slot.x + slot.w && point.y >= slot.y && point.y <= slot.y + slot.h
+  ))?.[0];
 }
 
-async function applyLoaded(next) {
-  state = { ...structuredClone(defaults), ...next };
-  initImages();
-  await hydrateImages();
-  bindInputValues();
-  renderSwatches();
-  renderSlots();
-  resizeCanvas();
-  syncAdjust();
+function softCard(x, y, w, h, r) {
+  ctx.save();
+  ctx.shadowColor = "rgba(93, 86, 150, 0.12)";
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 8;
+  roundRect(x, y, w, h, r, "#fff");
+  ctx.restore();
 }
 
-function bindInputValues() {
-  ["template", "name", "age", "height", "gender", "summary", "features", "memo", "keywords", "credit", "bgColor", "accentColor", "paperNoise"].forEach((id) => {
-    document.querySelector(`#${id}`).value = state[id];
+function roundRect(x, y, w, h, r, fill) {
+  ctx.beginPath();
+  pathRoundRect(x, y, w, h, r);
+  ctx.fillStyle = fill;
+  ctx.fill();
+}
+
+function pathRoundRect(x, y, w, h, r) {
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+}
+
+function drawText(text, x, y, size, maxWidth, weight = 700, align = "left", color = "#1c1b1f") {
+  ctx.save();
+  ctx.font = `${weight} ${size}px "Suit", "Malgun Gothic", sans-serif`;
+  ctx.textAlign = align;
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y, maxWidth);
+  ctx.restore();
+}
+
+function drawWrapped(text, x, y, size, maxWidth, lineHeight, weight = 700) {
+  ctx.save();
+  ctx.font = `${weight} ${size}px "Suit", "Malgun Gothic", sans-serif`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  ctx.fillStyle = "#1c1b1f";
+  String(text).split("\n").forEach((paragraph) => {
+    let line = "";
+    paragraph.split(" ").forEach((word) => {
+      const test = line ? `${line} ${word}` : word;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        ctx.fillText(line, x, y, maxWidth);
+        y += lineHeight;
+        line = word;
+      } else {
+        line = test;
+      }
+    });
+    ctx.fillText(line, x, y, maxWidth);
+    y += lineHeight;
   });
+  ctx.restore();
 }
 
-function hydrateImages() {
-  const jobs = Object.values(state.images).map((image) => new Promise((resolve) => {
-    if (!image.src) {
-      resolve();
-      return;
-    }
-    const img = new Image();
-    img.onload = () => {
-      image.img = img;
-      resolve();
-    };
-    img.onerror = resolve;
-    img.src = image.src;
-  }));
-  return Promise.all(jobs);
-}
-
-function resetAll() {
-  if (!confirm("현재 작업을 초기화할까요?")) return;
-  state = structuredClone(defaults);
-  init();
-}
-
-function toggleTemplate() {
-  state.template = state.template === "grid" ? "paper" : "grid";
-  bindInputValues();
-  resizeCanvas();
-}
-
-function init() {
-  initImages();
-  bindInputValues();
-  renderSwatches();
-  renderSlots();
-  resizeCanvas();
-  syncAdjust();
-}
-
-bindInputs();
 init();
-document.fonts?.ready.then(draw);

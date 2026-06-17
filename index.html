@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WHAT_ET</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23315bd6' d='M32 4l7.9 17 18.6 2.3-13.7 12.8 3.6 18.4L32 45.4 15.6 54.5l3.6-18.4L5.5 23.3 24.1 21z'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%235d5696' d='M32 4l7.9 17 18.6 2.3-13.7 12.8 3.6 18.4L32 45.4 15.6 54.5l3.6-18.4L5.5 23.3 24.1 21z'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -14,59 +14,40 @@
         <div class="brand-title">
           <div class="logo-star" aria-hidden="true">★</div>
           <div>
-          <p class="eyebrow">WHAT_ET STUDIO</p>
-          <h1>WHAT_ET</h1>
+            <p class="eyebrow">CHARACTER SHEET MAKER</p>
+            <h1>WHAT_ET</h1>
           </div>
         </div>
         <button id="exportPng" class="primary">PNG 저장</button>
       </header>
 
-      <nav class="tabs" aria-label="편집 메뉴">
-        <button class="tab active" data-tab="profile">P 프로필</button>
-        <button class="tab" data-tab="images">I 이미지</button>
-        <button class="tab" data-tab="colors">C 색상</button>
-        <button class="tab" data-tab="stickers">★ 스티커</button>
-        <button class="tab" data-tab="save">S 저장</button>
-      </nav>
-
-      <section class="pane active" id="profilePane">
-        <div class="field compact">
-          <label for="template">템플릿</label>
-          <select id="template">
-            <option value="grid">파스텔 블루 자료표</option>
-            <option value="paper">종이 자료틀</option>
-          </select>
-        </div>
+      <section class="group">
+        <h2>기본 정보</h2>
+        <label>이름<input id="name" type="text" placeholder="캐릭터 이름"></label>
         <div class="two">
-          <label>이름<input id="name" type="text" value="미야 밍"></label>
-          <label>나이<input id="age" type="text" value="중국"></label>
+          <label>나이<input id="age" type="text" placeholder="나이"></label>
+          <label>키<input id="height" type="text" placeholder="키"></label>
         </div>
-        <div class="two">
-          <label>키<input id="height" type="text" value="156cm"></label>
-          <label>성별<input id="gender" type="text" value="여성"></label>
-        </div>
-        <label>한 줄 성격
-          <input id="summary" type="text" value="활발한 | 노력하는 | 성실한 | 속이 깊은 | 솔직한 정이 많은">
-        </label>
-        <label>특징 설명
-          <textarea id="features" rows="4">정별 + 흑발 브릿지 + 백안 + XX특이동공 | 숏컷 + 어깨 살짝 넘는 옆머리 | 파란 보석이 붙어있는 하얀 리본
-짧잔 B컵 | 내려간 눈썹 + 올라간 눈매 + 웃는 상</textarea>
-        </label>
-        <label>하단 안내
-          <textarea id="memo" rows="3">기본 의상은 왼쪽 상단의 의상 디자인을 따라주세요! 신발은 검은 워커입니다.
-의상 오마카세 + 정해져 있는 경우 테마컬러를 사용해주세요!!!</textarea>
-        </label>
-        <div class="two">
-          <label>대표 키워드<input id="keywords" type="text" value="바다, 파도, 리본"></label>
-          <label>출처/닉네임<input id="credit" type="text" value="@식샤님"></label>
-        </div>
+        <label>성별<input id="gender" type="text" placeholder="성별"></label>
+        <label>키워드<input id="keywords" type="text" placeholder="예: 바다, 리본, 파도"></label>
+        <label>출처<input id="credit" type="text" placeholder="@출처"></label>
       </section>
 
-      <section class="pane" id="imagesPane">
-        <div class="notice">시트 위 이미지 영역을 더블클릭해도 업로드할 수 있어요. 선택한 이미지는 아래 조절바로 맞춥니다.</div>
+      <section class="group">
+        <h2>외관 설명</h2>
+        <label>헤어 & 얼굴
+          <textarea id="summary" rows="4" placeholder="머리색, 눈색, 표정, 인상 등을 적어주세요."></textarea>
+        </label>
+        <label>의상 & 기타
+          <textarea id="memo" rows="4" placeholder="의상, 소품, 분위기 등을 적어주세요."></textarea>
+        </label>
+      </section>
+
+      <section class="group">
+        <h2>이미지</h2>
         <div id="slotList" class="slot-list"></div>
         <div class="adjust">
-          <p id="selectedName">선택된 이미지: 메인</p>
+          <p id="selectedName">선택된 이미지: 메인 전신</p>
           <label>확대 <input id="zoom" type="range" min="0.2" max="3" step="0.01" value="1"></label>
           <div class="two">
             <label>X <input id="offsetX" type="range" min="-600" max="600" step="1" value="0"></label>
@@ -80,46 +61,18 @@
         </div>
       </section>
 
-      <section class="pane" id="colorsPane">
+      <section class="group">
+        <h2>컬러</h2>
         <div class="swatches" id="swatches"></div>
-        <label>배경색 <input id="bgColor" type="color" value="#315bd6"></label>
-        <label>격자/강조색 <input id="accentColor" type="color" value="#315bd6"></label>
-        <label>종이 질감 강도 <input id="paperNoise" type="range" min="0" max="1" step="0.05" value="0.18"></label>
-      </section>
-
-      <section class="pane" id="stickersPane">
-        <div class="two">
-          <label>텍스트<input id="stickerText" type="text" value="얼굴 인상"></label>
-          <label>크기<input id="stickerSize" type="number" min="18" max="96" value="34"></label>
-        </div>
-        <div class="button-row">
-          <button id="addSticker">텍스트 추가</button>
-          <button id="deleteSticker">선택 삭제</button>
-          <button id="clearStickers">전체 삭제</button>
-        </div>
-        <div class="notice">스티커는 시트 위에서 드래그로 옮길 수 있습니다.</div>
-      </section>
-
-      <section class="pane" id="savePane">
-        <div class="button-grid">
-          <button id="saveSlot">브라우저 슬롯 저장</button>
-          <button id="loadSlot">슬롯 불러오기</button>
-          <button id="downloadJson">JSON 저장</button>
-          <label class="file-button">JSON 불러오기<input id="importJson" type="file" accept="application/json"></label>
-        </div>
-        <button id="resetAll" class="danger">전체 초기화</button>
-        <p class="hint">이미지는 내 컴퓨터 브라우저 안에만 저장됩니다. JSON으로 내려받으면 이미지까지 함께 보관돼요.</p>
       </section>
     </aside>
 
     <section class="workspace">
       <div class="toolbar">
-        <button id="prevTemplate">←</button>
-        <strong id="canvasLabel">블루 그리드 외관표</strong>
-        <button id="nextTemplate">→</button>
+        <strong>WHAT_ET SHEET</strong>
       </div>
       <div class="stage-wrap">
-        <canvas id="sheet" width="1920" height="1200" aria-label="외관표 미리보기"></canvas>
+        <canvas id="sheet" width="1600" height="1200" aria-label="외관표 미리보기"></canvas>
         <input id="imagePicker" type="file" accept="image/*" hidden>
       </div>
     </section>
