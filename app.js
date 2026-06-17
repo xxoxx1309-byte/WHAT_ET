@@ -4,9 +4,9 @@ const picker = document.querySelector("#imagePicker");
 
 const slots = {
   main: { label: "메인 전신", x: 160, y: 345, w: 520, h: 650, r: 28 },
-  outfit: { label: "의상", x: 730, y: 345, w: 220, h: 220, r: 24 },
-  face: { label: "얼굴", x: 985, y: 345, w: 220, h: 220, r: 24 },
-  expression: { label: "표정", x: 1240, y: 345, w: 220, h: 220, r: 24 },
+  detail1: { label: "상세컷 1", x: 730, y: 345, w: 220, h: 220, r: 24 },
+  detail2: { label: "상세컷 2", x: 985, y: 345, w: 220, h: 220, r: 24 },
+  detail3: { label: "상세컷 3", x: 1240, y: 345, w: 220, h: 220, r: 24 },
 };
 
 const state = {
@@ -61,7 +61,6 @@ function init() {
   renderSlots();
   renderSwatches();
   syncAdjust();
-  applyUiTheme();
   draw();
   document.fonts?.ready.then(draw);
 }
@@ -92,7 +91,6 @@ function renderSwatches() {
     label.innerHTML = `${names[index]}<input type="color" value="${color}">`;
     label.querySelector("input").addEventListener("input", (event) => {
       state.colors[index] = event.target.value;
-      applyUiTheme();
       draw();
     });
     wrap.append(label);
@@ -372,18 +370,6 @@ function getTheme() {
     muted: mix(text, primary, 0.45),
     shadow: hexToRgba(primary, 0.14),
   };
-}
-
-function applyUiTheme() {
-  const theme = getTheme();
-  const root = document.documentElement;
-  root.style.setProperty("--ink", theme.text);
-  root.style.setProperty("--muted", theme.muted);
-  root.style.setProperty("--primary", theme.primary);
-  root.style.setProperty("--line", theme.line);
-  root.style.setProperty("--panel", theme.background);
-  root.style.setProperty("--surface", theme.surface);
-  root.style.setProperty("--soft", theme.header);
 }
 
 function mix(a, b, amount) {
