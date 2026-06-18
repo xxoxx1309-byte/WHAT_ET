@@ -253,14 +253,14 @@ function drawSheet() {
 
   Object.entries(slots).forEach(([id, slot]) => drawImageSlot(id, slot, theme));
 
-  softCard(730, 600, 330, 320, 18, theme.surface, theme.shadow);
-  softCard(1090, 600, 330, 320, 18, theme.surface, theme.shadow);
-  drawText("헤어 & 얼굴", 760, 650, 29, 260, 900, "left", theme.text, "Pretendard");
-  drawWrapped(state.summary || "외관 특징을 입력하세요.", 760, 705, 18, 270, 28, 500, theme.text);
-  drawText("의상 & 기타", 1120, 650, 29, 260, 900, "left", theme.text, "Pretendard");
-  drawWrapped(state.memo || "의상과 소품 설명을 입력하세요.", 1120, 705, 18, 270, 28, 500, theme.text);
+  softCard(730, 600, 330, 300, 18, theme.surface, theme.shadow);
+  softCard(1090, 600, 330, 300, 18, theme.surface, theme.shadow);
+  drawText("헤어 & 얼굴", 750, 640, 27, 275, 900, "left", theme.text, "Pretendard");
+  drawWrapped(state.summary || "외관 특징을 입력하세요.", 750, 690, 19, 285, 30, 500, theme.text);
+  drawText("의상 & 기타", 1110, 640, 27, 275, 900, "left", theme.text, "Pretendard");
+  drawWrapped(state.memo || "의상과 소품 설명을 입력하세요.", 1110, 690, 19, 285, 30, 500, theme.text);
 
-  roundRect(755, 1012, 430, 12, 6, theme.secondary);
+  roundRect(770, 986, 400, 10, 5, theme.secondary);
   drawText(hashKeywords(state.keywords), 125, 1056, 26, 650, 800, "left", theme.muted);
 }
 
