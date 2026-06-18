@@ -1,29 +1,35 @@
-const STORAGE_KEY = "what_et.characterNote.v1";
+const STORAGE_KEY = "what_et.characterNote.v2";
+
+const themes = [
+  { name: "민트", accent: "#87a9ad", paper: "#ffffff", text: "#33434a" },
+  { name: "블루", accent: "#5d8cc2", paper: "#fbfdff", text: "#243448" },
+  { name: "라일락", accent: "#9b8ac4", paper: "#fffaff", text: "#352e42" },
+  { name: "로즈", accent: "#c47b91", paper: "#fffafa", text: "#433037" },
+  { name: "먹색", accent: "#30363a", paper: "#ffffff", text: "#25292c" },
+];
 
 const defaultNote = {
-  name: "사카",
-  alias: "Saga",
-  tagline: "영조海가 너를 내게로 인도했어.",
+  name: "",
+  alias: "",
+  tagline: "",
   accent: "#87a9ad",
-  meta: [
-    { label: "나이", value: "20세" },
-    { label: "성별", value: "여성" },
-    { label: "신장", value: "160cm" },
-    { label: "직업", value: "등대지기" },
-  ],
+  paper: "#ffffff",
+  text: "#33434a",
+  meta: [],
   sections: [
     {
-      title: "기록",
+      title: "",
       type: "plain",
-      body: "검은 모래로 뒤덮인 해변가 인근 마을의 등대지기.\n자신이 태어난 마을과 바다를 끔찍이 사랑하는 소녀.\n\n언제부턴가 마을 바다에 일어나기 시작한 이상 현상으로 인해 전면 무인화된 등대를 지킬 누군가가 필요해졌다.\n소녀는 바다를 사랑하는 만큼 바닷가의 사람들을 사랑했다.\n그들을 자신이 무사히 인도할 수 있다면 무엇이든 하겠다는 생각으로 어린 나이에 공부를 시작했고,\n스무살이 되던 해 소녀는 그 마을의 등대를 지키기 시작했다.",
-    },
-    {
-      title: "인터뷰 기록",
-      type: "box",
-      body: "약 삼 년 전부터 아이슬란드의 특정 해안 인근에서 괴현상이 보고되기 시작했어요.\n특히 그 현상 때문에 피해를 가장 크게 본 곳은 검은 모래 해변인데,\n그곳에는 매일 밤마다 절대 죽지 않는 수많은 해파리 떼가 나타났다고 봐요.\n\n중요한 건 그녀가 그 검은 모래 해변을 지키는 등대지기였다는 거고,\n그녀가 그 해파리 떼에게서 인간의 말을 들었다는 거예요.",
+      body: "",
     },
   ],
-  signature: "- 26M-RFT00의 처분을 결정한 AI의 인터뷰 中",
+  signature: "",
+  scratch: "",
+  format: {
+    paperWidth: 860,
+    bodySize: 15,
+    lineHeight: 1.88,
+  },
 };
 
 let note = loadNote();
@@ -33,6 +39,13 @@ const fields = {
   alias: document.querySelector("#characterAlias"),
   tagline: document.querySelector("#tagline"),
   accent: document.querySelector("#accentColor"),
+  paper: document.querySelector("#paperColor"),
+  text: document.querySelector("#textColor"),
+  scratch: document.querySelector("#scratchNote"),
+  templateKind: document.querySelector("#templateKind"),
+  paperWidth: document.querySelector("#paperWidth"),
+  bodySize: document.querySelector("#bodySize"),
+  lineHeight: document.querySelector("#lineHeight"),
 };
 
 function init() {
@@ -40,24 +53,65 @@ function init() {
   fields.alias.addEventListener("input", () => updateField("alias", fields.alias.value));
   fields.tagline.addEventListener("input", () => updateField("tagline", fields.tagline.value));
   fields.accent.addEventListener("input", () => updateField("accent", fields.accent.value));
+  fields.paper.addEventListener("input", () => updateField("paper", fields.paper.value));
+  fields.text.addEventListener("input", () => updateField("text", fields.text.value));
+  fields.scratch.addEventListener("input", () => updateField("scratch", fields.scratch.value));
+  fields.paperWidth.addEventListener("input", () => updateFormat("paperWidth", Number(fields.paperWidth.value)));
+  fields.bodySize.addEventListener("input", () => updateFormat("bodySize", Number(fields.bodySize.value)));
+  fields.lineHeight.addEventListener("input", () => updateFormat("lineHeight", Number(fields.lineHeight.value)));
+  document.querySelector("#focusMode").addEventListener("click", toggleFocusMode);
+  document.querySelector("#insertTemplate").addEventListener("click", insertTemplate);
   document.querySelector("#addMeta").addEventListener("click", addMeta);
   document.querySelector("#addSection").addEventListener("click", addSection);
   document.querySelector("#saveNote").addEventListener("click", () => saveNote("저장됨"));
   document.querySelector("#newNote").addEventListener("click", resetNote);
-  document.querySelector("#printNote").addEventListener("click", () => window.print());
+  document.querySelector("#shareNote").addEventListener("click", shareNote);
+  document.querySelector("#exportPng").addEventListener("click", exportPng);
+  document.querySelector("#exportPdf").addEventListener("click", () => window.print());
+  renderThemes();
   renderAll();
 }
 
 function renderAll() {
+  ensureNoteShape();
   fields.name.value = note.name;
   fields.alias.value = note.alias;
   fields.tagline.value = note.tagline;
   fields.accent.value = note.accent;
-  document.documentElement.style.setProperty("--accent", note.accent);
-  document.documentElement.style.setProperty("--accent-dark", darken(note.accent, 0.24));
+  fields.paper.value = note.paper;
+  fields.text.value = note.text;
+  fields.scratch.value = note.scratch;
+  fields.paperWidth.value = note.format.paperWidth;
+  fields.bodySize.value = note.format.bodySize;
+  fields.lineHeight.value = note.format.lineHeight;
+  applyTheme();
+  applyFormat();
   renderMetaEditor();
   renderSectionEditor();
   renderPreview();
+  updateStats();
+}
+
+function renderThemes() {
+  const wrap = document.querySelector("#themePresets");
+  wrap.innerHTML = "";
+  themes.forEach((theme) => {
+    const button = document.createElement("button");
+    button.className = "theme-button";
+    button.type = "button";
+    button.innerHTML = `
+      <span class="theme-chip" style="--chip:${theme.accent}"></span>
+      <span>${theme.name}</span>
+    `;
+    button.addEventListener("click", () => {
+      note.accent = theme.accent;
+      note.paper = theme.paper;
+      note.text = theme.text;
+      renderAll();
+      touch();
+    });
+    wrap.append(button);
+  });
 }
 
 function renderMetaEditor() {
@@ -131,10 +185,12 @@ function renderSectionEditor() {
 
 function renderPreview() {
   const preview = document.querySelector("#notePreview");
+  const hasMeta = note.meta.some((item) => item.label || item.value);
+  const hasContent = note.name || note.alias || note.tagline || hasMeta || note.sections.some((section) => section.title || section.body);
   preview.innerHTML = `
     <header class="paper-head">
       ${note.alias ? `<div class="paper-alias">${escapeHtml(note.alias)}</div>` : ""}
-      <h2 class="paper-title">${escapeHtml(note.name || "이름 없음")}</h2>
+      <h2 class="paper-title">${escapeHtml(note.name || "무제 설정")}</h2>
       <div class="meta-list">
         ${note.meta.filter((item) => item.label || item.value).map((item) => `
           <div class="meta-line">
@@ -147,6 +203,7 @@ function renderPreview() {
     ${note.tagline ? `<p class="quote">${escapeHtml(note.tagline)}</p>` : ""}
     ${note.sections.map(renderPreviewSection).join("")}
     ${note.signature ? `<p class="signature">${escapeHtml(note.signature)}</p>` : ""}
+    ${hasContent ? "" : `<p class="empty-paper">왼쪽에서 설정을 작성하면 여기에 문서처럼 정리됩니다.</p>`}
   `;
 }
 
@@ -172,19 +229,114 @@ function renderPreviewSection(section) {
 
 function updateField(key, value) {
   note[key] = value;
+  if (["accent", "paper", "text"].includes(key)) applyTheme();
   touch();
 }
 
+function applyTheme() {
+  document.documentElement.style.setProperty("--accent", note.accent);
+  document.documentElement.style.setProperty("--accent-dark", darken(note.accent, 0.24));
+  document.documentElement.style.setProperty("--paper", note.paper);
+  document.documentElement.style.setProperty("--ink", note.text);
+  document.documentElement.style.setProperty("--muted", mix(note.text, "#ffffff", 0.42));
+}
+
+function updateFormat(key, value) {
+  note.format[key] = value;
+  applyFormat();
+  touch();
+}
+
+function applyFormat() {
+  document.documentElement.style.setProperty("--paper-width", `${note.format.paperWidth}px`);
+  document.documentElement.style.setProperty("--body-size", `${note.format.bodySize}px`);
+  document.documentElement.style.setProperty("--body-leading", note.format.lineHeight);
+}
+
 function addMeta() {
-  note.meta.push({ label: "항목", value: "" });
+  note.meta.push({ label: "", value: "" });
   renderAll();
   touch();
 }
 
 function addSection() {
-  note.sections.push({ title: "새 섹션", type: "plain", body: "" });
+  note.sections.push({ title: "", type: "plain", body: "" });
   renderAll();
   touch();
+}
+
+function insertTemplate() {
+  const template = getTemplate(fields.templateKind.value);
+  if (!note.meta.length) note.meta.push(...template.meta);
+  note.sections.push(...template.sections);
+  if (!note.accent || note.accent === defaultNote.accent) {
+    note.accent = template.theme.accent;
+    note.paper = template.theme.paper;
+    note.text = template.theme.text;
+  }
+  renderAll();
+  touch();
+}
+
+function getTemplate(kind) {
+  const commonMeta = [
+    { label: "나이", value: "" },
+    { label: "성별", value: "" },
+    { label: "신장", value: "" },
+    { label: "직업", value: "" },
+  ];
+  const templates = {
+    profile: {
+      theme: themes[0],
+      meta: commonMeta,
+      sections: [
+        { title: "개요", type: "plain", body: "" },
+        { title: "외형", type: "plain", body: "" },
+        { title: "성격", type: "plain", body: "" },
+        { title: "기타", type: "box", body: "" },
+      ],
+    },
+    story: {
+      theme: themes[1],
+      meta: commonMeta,
+      sections: [
+        { title: "현재", type: "plain", body: "" },
+        { title: "과거", type: "plain", body: "" },
+        { title: "전환점", type: "plain", body: "" },
+        { title: "숨겨진 기록", type: "fold", body: "" },
+      ],
+    },
+    interview: {
+      theme: themes[4],
+      meta: [
+        { label: "기록자", value: "" },
+        { label: "대상", value: "" },
+        { label: "날짜", value: "" },
+      ],
+      sections: [
+        { title: "인터뷰 로그", type: "box", body: "" },
+        { title: "관찰 메모", type: "plain", body: "" },
+      ],
+    },
+    relation: {
+      theme: themes[3],
+      meta: [
+        { label: "관계", value: "" },
+        { label: "호칭", value: "" },
+        { label: "상태", value: "" },
+      ],
+      sections: [
+        { title: "첫 인상", type: "plain", body: "" },
+        { title: "현재 관계", type: "plain", body: "" },
+        { title: "중요 사건", type: "box", body: "" },
+      ],
+    },
+  };
+  return structuredClone(templates[kind] || templates.profile);
+}
+
+function toggleFocusMode() {
+  document.body.classList.toggle("focus-mode");
 }
 
 function handleSectionAction(action, index) {
@@ -206,6 +358,7 @@ function handleSectionAction(action, index) {
 
 function touch() {
   renderPreview();
+  updateStats();
   saveNote("자동 저장됨", false);
 }
 
@@ -213,6 +366,36 @@ function saveNote(message = "저장됨", showTime = true) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(note));
   const suffix = showTime ? ` · ${new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit" }).format(new Date())}` : "";
   document.querySelector("#saveStatus").textContent = `${message}${suffix}`;
+  document.querySelector("#savedState").textContent = message;
+}
+
+async function shareNote() {
+  const text = noteToText();
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: note.name || "WHAT_ET 설정 노트", text });
+      saveNote("공유 열림", false);
+      return;
+    }
+    await navigator.clipboard.writeText(text);
+    saveNote("본문 복사됨", false);
+  } catch (error) {
+    saveNote("공유 취소됨", false);
+  }
+}
+
+async function exportPng() {
+  const paper = document.querySelector("#notePreview");
+  if (!window.html2canvas) {
+    saveNote("PNG 모듈 로드 실패", false);
+    return;
+  }
+  const canvas = await html2canvas(paper, { backgroundColor: note.paper, scale: 2 });
+  const link = document.createElement("a");
+  link.download = `${note.name || "WHAT_ET_NOTE"}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+  saveNote("PNG 저장됨", false);
 }
 
 function loadNote() {
@@ -232,10 +415,75 @@ function resetNote() {
   renderAll();
 }
 
+function updateStats() {
+  const text = [
+    note.name,
+    note.alias,
+    note.tagline,
+    ...note.meta.flatMap((item) => [item.label, item.value]),
+    ...note.sections.flatMap((section) => [section.title, section.body]),
+    note.scratch,
+  ].join("");
+  const count = [...text.replace(/\s/g, "")].length;
+  document.querySelector("#charCount").textContent = `${count.toLocaleString("ko-KR")}자`;
+  document.querySelector("#sectionCount").textContent = `${note.sections.length}섹션`;
+  document.querySelector("#previewStats").textContent = `${count.toLocaleString("ko-KR")}자`;
+}
+
+function ensureNoteShape() {
+  note.name ||= "";
+  note.alias ||= "";
+  note.tagline ||= "";
+  note.accent ||= "#87a9ad";
+  note.paper ||= "#ffffff";
+  note.text ||= "#33434a";
+  note.meta = Array.isArray(note.meta) ? note.meta : [];
+  note.sections = Array.isArray(note.sections) ? note.sections : [];
+  note.scratch ||= "";
+  note.signature ||= "";
+  note.format = {
+    paperWidth: Number(note.format?.paperWidth) || 860,
+    bodySize: Number(note.format?.bodySize) || 15,
+    lineHeight: Number(note.format?.lineHeight) || 1.88,
+  };
+}
+
+function noteToText() {
+  const lines = [];
+  if (note.name) lines.push(note.name);
+  if (note.alias) lines.push(note.alias);
+  if (note.tagline) lines.push(`> ${note.tagline}`);
+  note.meta.filter((item) => item.label || item.value).forEach((item) => {
+    lines.push(`${item.label || "항목"}: ${item.value || "-"}`);
+  });
+  note.sections.forEach((section) => {
+    if (section.title) lines.push(`\n[${section.title}]`);
+    if (section.body) lines.push(section.body);
+  });
+  if (note.scratch) lines.push(`\n[메모]\n${note.scratch}`);
+  return lines.join("\n");
+}
+
 function darken(hex, amount) {
   const clean = hex.replace("#", "");
   const rgb = [0, 2, 4].map((start) => parseInt(clean.slice(start, start + 2), 16));
   return `#${rgb.map((value) => Math.max(0, Math.round(value * (1 - amount))).toString(16).padStart(2, "0")).join("")}`;
+}
+
+function mix(a, b, amount) {
+  const ca = hexToRgb(a);
+  const cb = hexToRgb(b);
+  const mixed = ca.map((value, index) => Math.round(value * (1 - amount) + cb[index] * amount));
+  return rgbToHex(mixed);
+}
+
+function hexToRgb(hex) {
+  const clean = hex.replace("#", "");
+  return [0, 2, 4].map((start) => parseInt(clean.slice(start, start + 2), 16));
+}
+
+function rgbToHex(rgb) {
+  return `#${rgb.map((value) => value.toString(16).padStart(2, "0")).join("")}`;
 }
 
 function escapeHtml(value) {
