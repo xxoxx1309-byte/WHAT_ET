@@ -95,6 +95,7 @@ const defaultNote = {
     paperWidth: 860,
     bodySize: 15,
     lineHeight: 1.88,
+    fontFamily: "Pretendard",
   },
 };
 
@@ -109,6 +110,7 @@ const fields = {
   paper: document.querySelector("#paperColor"),
   text: document.querySelector("#textColor"),
   scratch: document.querySelector("#scratchNote"),
+  fontFamily: document.querySelector("#fontFamily"),
   paperWidth: document.querySelector("#paperWidth"),
   bodySize: document.querySelector("#bodySize"),
   lineHeight: document.querySelector("#lineHeight"),
@@ -122,6 +124,7 @@ function init() {
   fields.paper.addEventListener("input", () => updateField("paper", fields.paper.value));
   fields.text.addEventListener("input", () => updateField("text", fields.text.value));
   fields.scratch.addEventListener("input", () => updateField("scratch", fields.scratch.value));
+  fields.fontFamily.addEventListener("change", () => updateFormat("fontFamily", fields.fontFamily.value));
   fields.paperWidth.addEventListener("input", () => updateFormat("paperWidth", Number(fields.paperWidth.value)));
   fields.bodySize.addEventListener("input", () => updateFormat("bodySize", Number(fields.bodySize.value)));
   fields.lineHeight.addEventListener("input", () => updateFormat("lineHeight", Number(fields.lineHeight.value)));
@@ -150,6 +153,7 @@ function renderAll() {
   fields.paper.value = note.paper;
   fields.text.value = note.text;
   fields.scratch.value = note.scratch;
+  fields.fontFamily.value = note.format.fontFamily;
   fields.paperWidth.value = note.format.paperWidth;
   fields.bodySize.value = note.format.bodySize;
   fields.lineHeight.value = note.format.lineHeight;
@@ -342,6 +346,7 @@ function applyFormat() {
   document.documentElement.style.setProperty("--paper-width", `${note.format.paperWidth}px`);
   document.documentElement.style.setProperty("--body-size", `${note.format.bodySize}px`);
   document.documentElement.style.setProperty("--body-leading", note.format.lineHeight);
+  document.documentElement.style.setProperty("--note-font", `"${note.format.fontFamily}"`);
 }
 
 function addMeta() {
@@ -510,6 +515,7 @@ function ensureNoteShape() {
     paperWidth: Number(note.format?.paperWidth) || 860,
     bodySize: Number(note.format?.bodySize) || 15,
     lineHeight: Number(note.format?.lineHeight) || 1.88,
+    fontFamily: note.format?.fontFamily || "Pretendard",
   };
 }
 
