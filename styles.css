@@ -488,4 +488,20 @@ canvas {
   .slot-list {
     grid-template-columns: 1fr;
   }
+
+  .color-row {
+    grid-template-columns: minmax(0, 1fr) 44px 84px;
+  }
+
+  .color-swatch-button {
+    width: 44px;
+  }
+
+  .color-reset {
+    grid-column: 2;
+  }
+
+  .color-remove {
+    grid-column: 3;
+  }
 }
