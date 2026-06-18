@@ -4,9 +4,9 @@ const picker = document.querySelector("#imagePicker");
 
 const slots = {
   main: { label: "메인 전신", x: 160, y: 345, w: 520, h: 650, r: 28 },
-  detail1: { label: "상세컷 1", x: 730, y: 345, w: 220, h: 220, r: 24 },
-  detail2: { label: "상세컷 2", x: 985, y: 345, w: 220, h: 220, r: 24 },
-  detail3: { label: "상세컷 3", x: 1240, y: 345, w: 220, h: 220, r: 24 },
+  detail1: { label: "상세컷 1", x: 730, y: 345, w: 230, h: 220, r: 24 },
+  detail2: { label: "상세컷 2", x: 990, y: 345, w: 230, h: 220, r: 24 },
+  detail3: { label: "상세컷 3", x: 1250, y: 345, w: 230, h: 220, r: 24 },
 };
 
 const state = {
@@ -253,12 +253,12 @@ function drawSheet() {
 
   Object.entries(slots).forEach(([id, slot]) => drawImageSlot(id, slot, theme));
 
-  softCard(730, 600, 300, 320, 18, theme.surface, theme.shadow);
-  softCard(1060, 600, 300, 320, 18, theme.surface, theme.shadow);
-  drawText("헤어 & 얼굴", 760, 650, 29, 240, 900, "left", theme.text, "Pretendard");
-  drawWrapped(state.summary || "외관 특징을 입력하세요.", 760, 705, 24, 230, 34, 700, theme.text);
-  drawText("의상 & 기타", 1090, 650, 29, 240, 900, "left", theme.text, "Pretendard");
-  drawWrapped(clampText(state.memo || "의상과 소품 설명을 입력하세요.", 62), 1090, 705, 22, 230, 31, 700, theme.text);
+  softCard(730, 600, 320, 320, 18, theme.surface, theme.shadow);
+  softCard(1080, 600, 320, 320, 18, theme.surface, theme.shadow);
+  drawText("헤어 & 얼굴", 760, 650, 29, 250, 900, "left", theme.text, "Pretendard");
+  drawWrapped(state.summary || "외관 특징을 입력하세요.", 760, 705, 20, 260, 30, 500, theme.text);
+  drawText("의상 & 기타", 1110, 650, 29, 250, 900, "left", theme.text, "Pretendard");
+  drawWrapped(clampText(state.memo || "의상과 소품 설명을 입력하세요.", 92), 1110, 705, 20, 260, 30, 500, theme.text);
 
   roundRect(755, 1012, 430, 12, 6, theme.secondary);
   drawText(hashKeywords(state.keywords), 125, 1056, 26, 650, 800, "left", theme.muted);
@@ -403,7 +403,7 @@ function splitForWrap(text) {
     if (!part) return;
     if (/\s+/.test(part)) {
       tokens.push(part);
-    } else if (/[\u3131-\uD79D]/.test(part) && part.length > 8) {
+    } else if (/[\u3131-\uD79D]/.test(part) && part.length > 12) {
       tokens.push(...Array.from(part));
     } else {
       tokens.push(part);
