@@ -99,6 +99,7 @@ const defaultNote = {
 };
 
 let note = loadNote();
+let history = [];
 
 const fields = {
   name: document.querySelector("#characterName"),
@@ -126,6 +127,7 @@ function init() {
   fields.lineHeight.addEventListener("input", () => updateFormat("lineHeight", Number(fields.lineHeight.value)));
   document.querySelector("#focusMode").addEventListener("click", toggleFocusMode);
   document.querySelector("#exitFocus").addEventListener("click", exitFocusMode);
+  document.querySelector("#undoAction").addEventListener("click", undoAction);
   document.querySelector("#addMeta").addEventListener("click", addMeta);
   document.querySelector("#addSection").addEventListener("click", addSection);
   document.querySelector("#saveNote").addEventListener("click", () => saveNote("저장됨"));
@@ -136,6 +138,7 @@ function init() {
   renderThemes();
   renderTemplateCards();
   renderAll();
+  updateUndoButton();
 }
 
 function renderAll() {
@@ -156,6 +159,7 @@ function renderAll() {
   renderSectionEditor();
   renderPreview();
   updateStats();
+  updateUndoButton();
 }
 
 function renderThemes() {
@@ -221,6 +225,7 @@ function renderMetaEditor() {
       touch();
     });
     row.querySelector("button").addEventListener("click", () => {
+      remember();
       note.meta.splice(index, 1);
       renderAll();
       touch();
@@ -340,18 +345,21 @@ function applyFormat() {
 }
 
 function addMeta() {
+  remember();
   note.meta.push({ label: "", value: "" });
   renderAll();
   touch();
 }
 
 function addSection() {
+  remember();
   note.sections.push({ title: "", type: "plain", body: "" });
   renderAll();
   touch();
 }
 
 function insertTemplate(kind) {
+  remember();
   const template = structuredClone(templates[kind] || templates.profile);
   if (!note.meta.length) note.meta.push(...template.meta);
   note.sections.push(...template.sections);
@@ -362,6 +370,7 @@ function insertTemplate(kind) {
   }
   renderAll();
   touch();
+  saveNote(`${template.name} 추가됨`, false);
 }
 
 function toggleFocusMode() {
@@ -373,6 +382,7 @@ function exitFocusMode() {
 }
 
 function handleSectionAction(action, index) {
+  remember();
   if (action === "up" && index > 0) {
     [note.sections[index - 1], note.sections[index]] = [note.sections[index], note.sections[index - 1]];
   }
@@ -387,6 +397,27 @@ function handleSectionAction(action, index) {
   }
   renderAll();
   touch();
+}
+
+function undoAction() {
+  const previous = history.pop();
+  if (!previous) return;
+  note = previous;
+  renderAll();
+  touch();
+  saveNote("되돌림", false);
+  updateUndoButton();
+}
+
+function remember() {
+  history.push(structuredClone(note));
+  if (history.length > 30) history.shift();
+  updateUndoButton();
+}
+
+function updateUndoButton() {
+  const button = document.querySelector("#undoAction");
+  button.disabled = history.length === 0;
 }
 
 function touch() {
@@ -443,6 +474,7 @@ function loadNote() {
 
 function resetNote() {
   if (!confirm("새 설정 문서를 시작할까요? 현재 내용은 저장본에서 사라집니다.")) return;
+  remember();
   note = structuredClone(defaultNote);
   saveNote("새 문서 시작");
   renderAll();

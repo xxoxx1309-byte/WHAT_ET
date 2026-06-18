@@ -67,6 +67,16 @@ button:hover {
   border-color: var(--accent);
 }
 
+button:disabled {
+  color: #aeb8bc;
+  cursor: default;
+  background: #f5f7f7;
+}
+
+button:disabled:hover {
+  border-color: var(--line);
+}
+
 .primary {
   border-color: var(--accent-dark);
   background: var(--accent-dark);
