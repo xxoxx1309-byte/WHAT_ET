@@ -3,10 +3,10 @@ const ctx = canvas.getContext("2d");
 const picker = document.querySelector("#imagePicker");
 
 const slots = {
-  main: { label: "메인 전신", x: 160, y: 345, w: 520, h: 650, r: 28 },
-  detail1: { label: "상세컷 1", x: 730, y: 345, w: 230, h: 220, r: 24 },
-  detail2: { label: "상세컷 2", x: 990, y: 345, w: 230, h: 220, r: 24 },
-  detail3: { label: "상세컷 3", x: 1250, y: 345, w: 230, h: 220, r: 24 },
+  main: { label: "메인 전신", x: 120, y: 330, w: 520, h: 690, r: 28 },
+  detail1: { label: "상세컷 1", x: 720, y: 330, w: 230, h: 210, r: 24 },
+  detail2: { label: "상세컷 2", x: 980, y: 330, w: 230, h: 210, r: 24 },
+  detail3: { label: "상세컷 3", x: 1240, y: 330, w: 230, h: 210, r: 24 },
 };
 
 const state = {
@@ -181,7 +181,14 @@ function importImage(event) {
   reader.onload = () => {
     const img = new Image();
     img.onload = () => {
-      state.images[pendingSlot] = { src: reader.result, img, zoom: 1, x: 0, y: 0, mode: "fill" };
+      state.images[pendingSlot] = {
+        src: reader.result,
+        img,
+        zoom: 1,
+        x: 0,
+        y: 0,
+        mode: pendingSlot === "main" ? "fit" : "fill",
+      };
       selectSlot(pendingSlot);
       pendingSlot = null;
       draw();
@@ -253,14 +260,14 @@ function drawSheet() {
 
   Object.entries(slots).forEach(([id, slot]) => drawImageSlot(id, slot, theme));
 
-  softCard(730, 600, 330, 300, 18, theme.surface, theme.shadow);
-  softCard(1090, 600, 330, 300, 18, theme.surface, theme.shadow);
-  drawText("헤어 & 얼굴", 750, 640, 27, 275, 900, "left", theme.text, "Pretendard");
-  drawWrapped(state.summary || "외관 특징을 입력하세요.", 750, 690, 19, 285, 30, 500, theme.text);
-  drawText("의상 & 기타", 1110, 640, 27, 275, 900, "left", theme.text, "Pretendard");
-  drawWrapped(state.memo || "의상과 소품 설명을 입력하세요.", 1110, 690, 19, 285, 30, 500, theme.text);
+  softCard(720, 595, 350, 330, 18, theme.surface, theme.shadow);
+  softCard(1100, 595, 350, 330, 18, theme.surface, theme.shadow);
+  drawText("헤어 & 얼굴", 750, 640, 27, 290, 900, "left", theme.text, "Pretendard");
+  drawWrapped(state.summary || "외관 특징을 입력하세요.", 750, 695, 18, 295, 29, 500, theme.text);
+  drawText("의상 & 기타", 1130, 640, 27, 290, 900, "left", theme.text, "Pretendard");
+  drawWrapped(state.memo || "의상과 소품 설명을 입력하세요.", 1130, 695, 18, 295, 29, 500, theme.text);
 
-  roundRect(770, 986, 400, 10, 5, theme.secondary);
+  roundRect(780, 980, 390, 10, 5, theme.secondary);
   drawText(hashKeywords(state.keywords), 125, 1056, 26, 650, 800, "left", theme.muted);
 }
 
@@ -375,11 +382,49 @@ function drawWrapped(text, x, y, size, maxWidth, lineHeight, weight = 700, color
   ctx.textBaseline = "top";
   ctx.fillStyle = color;
   String(text).split("\n").forEach((paragraph) => {
-    const explicitLine = paragraph.trim();
-    if (explicitLine) ctx.fillText(explicitLine, x, y);
-    y += lineHeight;
+    const lines = wrapManualLine(paragraph.trim(), maxWidth);
+    if (!lines.length) {
+      y += lineHeight;
+      return;
+    }
+    lines.forEach((line) => {
+      ctx.fillText(line, x, y);
+      y += lineHeight;
+    });
   });
   ctx.restore();
+}
+
+function wrapManualLine(line, maxWidth) {
+  if (!line) return [];
+  const output = [];
+  let current = "";
+  line.split(/(\s+)/).forEach((token) => {
+    if (!token) return;
+    const next = current + token;
+    if (ctx.measureText(next).width <= maxWidth) {
+      current = next;
+      return;
+    }
+    if (current.trim()) output.push(current.trimEnd());
+    current = "";
+    if (ctx.measureText(token).width <= maxWidth) {
+      current = token.trimStart();
+      return;
+    }
+    let piece = "";
+    Array.from(token).forEach((char) => {
+      if (ctx.measureText(piece + char).width > maxWidth && piece) {
+        output.push(piece);
+        piece = char;
+      } else {
+        piece += char;
+      }
+    });
+    current = piece;
+  });
+  if (current.trim()) output.push(current.trimEnd());
+  return output;
 }
 
 function getTheme() {
