@@ -236,12 +236,13 @@ function drawSheet() {
 
   softCard(70, 88, 1460, 1028, 34, theme.surface, theme.shadow);
   ctx.fillStyle = theme.header;
-  ctx.fillRect(70, 88, 1460, 162);
-  roundRect(125, 184, 680, 10, 6, theme.line);
+  ctx.fillRect(70, 88, 1460, 172);
+  roundRect(125, 188, 680, 9, 5, theme.line);
 
-  drawText(state.name || "CHARACTER NAME", 125, 150, 58, 720, 700, "left", theme.primary, "KoPub Batang");
-  drawText(metaText(), 130, 218, 22, 760, 700, "left", theme.text);
-  drawText(state.credit || "@credit", 1380, 150, 22, 220, 700, "right", theme.muted);
+  drawText(state.name || "CHARACTER NAME", 125, 154, 50, 720, 900, "left", theme.primary, "Pretendard");
+  const info = metaText();
+  if (info) drawText(info, 130, 224, 22, 760, 700, "left", theme.text);
+  if (state.credit) drawText(state.credit, 1380, 150, 22, 220, 700, "right", theme.muted);
 
   state.characterColors.filter((item) => item.set).slice(0, 7).forEach((item, index) => {
     ctx.beginPath();
@@ -298,7 +299,11 @@ function exportPng() {
 }
 
 function metaText() {
-  return `나이 ${state.age || "--"}    키 ${state.height || "--"}    성별 ${state.gender || "--"}`;
+  return [
+    state.age && `나이 ${state.age}`,
+    state.height && `키 ${state.height}`,
+    state.gender && `성별 ${state.gender}`,
+  ].filter(Boolean).join("  ·  ");
 }
 
 function hashKeywords(text) {
@@ -355,11 +360,16 @@ function pathRoundRect(x, y, w, h, r) {
 
 function drawText(text, x, y, size, maxWidth, weight = 700, align = "left", color = "#1c1b1f", family = "Pretendard") {
   ctx.save();
-  ctx.font = `${weight} ${size}px "${family}", "Malgun Gothic", sans-serif`;
+  let fitSize = size;
+  ctx.font = `${weight} ${fitSize}px "${family}", "Malgun Gothic", sans-serif`;
+  while (maxWidth && ctx.measureText(text).width > maxWidth && fitSize > 12) {
+    fitSize -= 1;
+    ctx.font = `${weight} ${fitSize}px "${family}", "Malgun Gothic", sans-serif`;
+  }
   ctx.textAlign = align;
   ctx.textBaseline = "middle";
   ctx.fillStyle = color;
-  ctx.fillText(text, x, y, maxWidth);
+  ctx.fillText(text, x, y);
   ctx.restore();
 }
 
@@ -371,20 +381,35 @@ function drawWrapped(text, x, y, size, maxWidth, lineHeight, weight = 700, color
   ctx.fillStyle = color;
   String(text).split("\n").forEach((paragraph) => {
     let line = "";
-    paragraph.split(" ").forEach((word) => {
-      const test = line ? `${line} ${word}` : word;
-      if (ctx.measureText(test).width > maxWidth && line) {
-        ctx.fillText(line, x, y, maxWidth);
+    splitForWrap(paragraph).forEach((token) => {
+      const test = line + token;
+      if (ctx.measureText(test).width > maxWidth && line.trim()) {
+        ctx.fillText(line, x, y);
         y += lineHeight;
-        line = word;
+        line = token.trimStart();
       } else {
         line = test;
       }
     });
-    ctx.fillText(line, x, y, maxWidth);
+    ctx.fillText(line, x, y);
     y += lineHeight;
   });
   ctx.restore();
+}
+
+function splitForWrap(text) {
+  const tokens = [];
+  String(text).split(/(\s+)/).forEach((part) => {
+    if (!part) return;
+    if (/\s+/.test(part)) {
+      tokens.push(part);
+    } else if (/[\u3131-\uD79D]/.test(part) && part.length > 8) {
+      tokens.push(...Array.from(part));
+    } else {
+      tokens.push(part);
+    }
+  });
+  return tokens;
 }
 
 function getTheme() {
