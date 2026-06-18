@@ -1,6 +1,8 @@
 const canvas = document.querySelector("#sheet");
 const ctx = canvas.getContext("2d");
 const picker = document.querySelector("#imagePicker");
+const STORAGE_KEY = "what_et.savedCharacters.v1";
+const textFieldIds = ["name", "age", "height", "gender", "keywords", "credit", "summary", "memo"];
 
 const slots = {
   main: { label: "메인 전신", x: 110, y: 340, w: 480, h: 660, r: 28 },
@@ -30,13 +32,14 @@ const state = {
 let selectedSlot = "main";
 let pendingSlot = null;
 let drag = null;
+let activeSaveId = null;
 
 function init() {
   Object.keys(slots).forEach((id) => {
     state.images[id] = { src: "", img: null, zoom: 1, x: 0, y: 0, mode: "fill" };
   });
 
-  ["name", "age", "height", "gender", "keywords", "credit", "summary", "memo"].forEach((id) => {
+  textFieldIds.forEach((id) => {
     const input = document.querySelector(`#${id}`);
     const sync = () => {
       state[id] = input.value;
@@ -56,6 +59,8 @@ function init() {
   document.querySelector("#clearImage").addEventListener("click", clearSelectedImage);
   document.querySelector("#exportPng").addEventListener("click", exportPng);
   document.querySelector("#addColor").addEventListener("click", addColor);
+  document.querySelector("#saveCharacter").addEventListener("click", saveCharacter);
+  document.querySelector("#newCharacter").addEventListener("click", resetCharacter);
   picker.addEventListener("change", importImage);
 
   canvas.addEventListener("dblclick", openClickedSlot);
@@ -66,6 +71,7 @@ function init() {
 
   renderSlots();
   renderSwatches();
+  renderSaveList();
   syncAdjust();
   draw();
   document.fonts?.ready.then(draw);
@@ -146,6 +152,95 @@ function addColor() {
   state.characterColors.push({ label: "", color: "#ffffff", fixed: false, set: false });
   renderSwatches();
   draw();
+}
+
+function saveCharacter() {
+  const saved = readSavedCharacters();
+  const now = new Date().toISOString();
+  const id = activeSaveId || makeId();
+  const index = saved.findIndex((item) => item.id === id);
+  const entry = {
+    id,
+    name: state.name.trim() || "이름 없음",
+    updatedAt: now,
+    data: serializeState(),
+  };
+
+  if (index >= 0) saved[index] = entry;
+  else saved.unshift(entry);
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+    activeSaveId = id;
+    renderSaveList();
+    setSaveStatus(`저장됨 · ${formatSavedAt(now)}`);
+  } catch (error) {
+    setSaveStatus("저장 공간이 부족해요. 이미지 용량을 줄이거나 일부 저장본을 삭제해주세요.");
+  }
+}
+
+function renderSaveList() {
+  const list = document.querySelector("#saveList");
+  const saved = readSavedCharacters();
+  list.innerHTML = "";
+  if (!saved.length) {
+    list.innerHTML = `<p class="empty-save">저장된 캐릭터가 없습니다.</p>`;
+    return;
+  }
+
+  saved.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = `save-item ${item.id === activeSaveId ? "active" : ""}`;
+    row.innerHTML = `
+      <button class="save-load" type="button">
+        <span>${escapeHtml(item.name)}</span>
+        <small>${formatSavedAt(item.updatedAt)}</small>
+      </button>
+      <button class="save-delete" type="button" aria-label="${escapeHtml(item.name)} 삭제">삭제</button>
+    `;
+    row.querySelector(".save-load").addEventListener("click", () => loadCharacter(item.id));
+    row.querySelector(".save-delete").addEventListener("click", () => deleteCharacter(item.id));
+    list.append(row);
+  });
+}
+
+async function loadCharacter(id) {
+  const item = readSavedCharacters().find((saved) => saved.id === id);
+  if (!item) return;
+  activeSaveId = id;
+  await applySavedData(item.data);
+  renderSaveList();
+  setSaveStatus(`${item.name} 불러옴`);
+}
+
+function deleteCharacter(id) {
+  const saved = readSavedCharacters();
+  const item = saved.find((entry) => entry.id === id);
+  if (!item || !confirm(`${item.name} 저장본을 삭제할까요?`)) return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(saved.filter((entry) => entry.id !== id)));
+  if (activeSaveId === id) activeSaveId = null;
+  renderSaveList();
+  setSaveStatus("저장본 삭제됨");
+}
+
+function resetCharacter() {
+  if (!confirm("현재 입력을 비우고 새 작업을 시작할까요? 저장하지 않은 내용은 사라집니다.")) return;
+  activeSaveId = null;
+  textFieldIds.forEach((id) => {
+    state[id] = "";
+    document.querySelector(`#${id}`).value = "";
+  });
+  state.characterColors = defaultCharacterColors();
+  Object.keys(slots).forEach((id) => {
+    state.images[id] = { src: "", img: null, zoom: 1, x: 0, y: 0, mode: "fill" };
+  });
+  selectedSlot = "main";
+  renderSlots();
+  renderSwatches();
+  renderSaveList();
+  syncAdjust();
+  draw();
+  setSaveStatus("새 작업 시작");
 }
 
 function selectSlot(id) {
@@ -326,6 +421,109 @@ function exportPng() {
   link.download = `${state.name || "WHAT_ET"}.png`;
   link.href = canvas.toDataURL("image/png");
   link.click();
+}
+
+function serializeState() {
+  const data = {
+    version: 1,
+    characterColors: state.characterColors.map((item) => ({ ...item })),
+    images: {},
+  };
+  textFieldIds.forEach((id) => {
+    data[id] = state[id];
+  });
+  Object.entries(state.images).forEach(([id, image]) => {
+    data.images[id] = {
+      src: image.src,
+      zoom: image.zoom,
+      x: image.x,
+      y: image.y,
+      mode: image.mode,
+    };
+  });
+  return data;
+}
+
+async function applySavedData(data = {}) {
+  textFieldIds.forEach((id) => {
+    state[id] = data[id] || "";
+    document.querySelector(`#${id}`).value = state[id];
+  });
+  state.characterColors = Array.isArray(data.characterColors) && data.characterColors.length
+    ? data.characterColors.map((item) => ({
+      label: item.label || "",
+      color: normalizeHex(item.color || "") || "#ffffff",
+      fixed: Boolean(item.fixed),
+      set: Boolean(item.set),
+    }))
+    : defaultCharacterColors();
+
+  await Promise.all(Object.keys(slots).map(async (id) => {
+    const savedImage = data.images?.[id] || {};
+    state.images[id] = {
+      src: savedImage.src || "",
+      img: null,
+      zoom: Number(savedImage.zoom) || 1,
+      x: Number(savedImage.x) || 0,
+      y: Number(savedImage.y) || 0,
+      mode: savedImage.mode === "fit" ? "fit" : "fill",
+    };
+    if (state.images[id].src) {
+      state.images[id].img = await loadImage(state.images[id].src);
+    }
+  }));
+
+  selectedSlot = "main";
+  renderSlots();
+  renderSwatches();
+  syncAdjust();
+  draw();
+}
+
+function readSavedCharacters() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function defaultCharacterColors() {
+  return [
+    { label: "테마", color: "#5d5696", fixed: true, set: false },
+    { label: "머리", color: "#ffffff", fixed: true, set: false },
+    { label: "눈", color: "#ffffff", fixed: true, set: false },
+    { label: "피부", color: "#ffffff", fixed: true, set: false },
+  ];
+}
+
+function loadImage(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+function makeId() {
+  return crypto.randomUUID ? crypto.randomUUID() : `save-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function formatSavedAt(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("ko-KR", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function setSaveStatus(message) {
+  document.querySelector("#saveStatus").textContent = message;
 }
 
 function metaText() {

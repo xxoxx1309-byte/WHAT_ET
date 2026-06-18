@@ -261,6 +261,59 @@ input[type="color"] {
   gap: 8px;
 }
 
+.save-actions {
+  grid-template-columns: 1fr 1fr;
+}
+
+.save-list {
+  display: grid;
+  gap: 8px;
+}
+
+.save-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 54px;
+  gap: 8px;
+}
+
+.save-load {
+  display: grid;
+  justify-items: start;
+  min-width: 0;
+  text-align: left;
+}
+
+.save-load span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.save-load small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.save-item.active .save-load {
+  border-color: var(--primary);
+  box-shadow: inset 4px 0 0 var(--primary);
+}
+
+.save-delete {
+  min-height: 42px;
+  padding: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.empty-save {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .swatches {
   display: grid;
   gap: 8px;
