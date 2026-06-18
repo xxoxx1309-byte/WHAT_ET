@@ -1,6 +1,25 @@
 const STORAGE_KEY = "what_et.characterNote.v2";
 
+const fontOptions = [
+  { value: "default", label: "기본 폰트" },
+  { value: "Pretendard", label: "프리텐다드" },
+  { value: "SUIT", label: "SUIT" },
+  { value: "KoPub Dotum", label: "KoPub 돋움" },
+  { value: "KoPub Batang", label: "KoPub 바탕" },
+  { value: "Gmarket Sans", label: "G마켓 산스" },
+  { value: "Chosunilbo_myungjo", label: "조선일보명조" },
+  { value: "MaruBuri", label: "마루 부리" },
+  { value: "BookkMyungjo", label: "부크크 명조" },
+  { value: "GimpoPeaceFoundation", label: "김포평화바탕" },
+  { value: "OngleipParkDahyeon", label: "온글잎 박다현체" },
+  { value: "IsYun", label: "이서윤체" },
+  { value: "HeirofLight", label: "빛의계승자체" },
+  { value: "DnfTemperedBlade", label: "던파 연단된 칼날" },
+  { value: "DungeonFighterOnlineBeatBeat", label: "던파 비트비트체" },
+];
+
 const themes = [
+  { name: "흑백", accent: "#242424", paper: "#ffffff", text: "#242424" },
   { name: "민트", accent: "#87a9ad", paper: "#ffffff", text: "#33434a" },
   { name: "블루", accent: "#5d8cc2", paper: "#fbfdff", text: "#243448" },
   { name: "라일락", accent: "#9b8ac4", paper: "#fffaff", text: "#352e42" },
@@ -46,7 +65,7 @@ const templates = {
   interview: {
     name: "인터뷰 로그",
     description: "기록자, 대상, 날짜와 인터뷰 박스를 만듭니다.",
-    theme: themes[4],
+    theme: themes[5],
     meta: [
       { label: "기록자", value: "" },
       { label: "대상", value: "" },
@@ -60,7 +79,7 @@ const templates = {
   relation: {
     name: "관계 정리",
     description: "호칭, 상태, 중요 사건을 관계표처럼 정리합니다.",
-    theme: themes[3],
+    theme: themes[4],
     meta: [
       { label: "관계", value: "" },
       { label: "호칭", value: "" },
@@ -78,14 +97,15 @@ const defaultNote = {
   name: "",
   alias: "",
   tagline: "",
-  accent: "#87a9ad",
+  accent: "#242424",
   paper: "#ffffff",
-  text: "#33434a",
+  text: "#242424",
   meta: [],
   sections: [
     {
       title: "",
       type: "plain",
+      fontFamily: "default",
       body: "",
     },
   ],
@@ -251,6 +271,11 @@ function renderSectionEditor() {
         <option value="box" ${section.type === "box" ? "selected" : ""}>테두리 박스</option>
         <option value="fold" ${section.type === "fold" ? "selected" : ""}>접기 박스</option>
       </select>
+      <select aria-label="섹션 폰트">
+        ${fontOptions.map((font) => `
+          <option value="${escapeHtml(font.value)}" ${section.fontFamily === font.value ? "selected" : ""}>${font.label}</option>
+        `).join("")}
+      </select>
       <textarea aria-label="섹션 본문">${escapeHtml(section.body)}</textarea>
       <div class="section-actions">
         <button type="button" data-action="up">위로</button>
@@ -263,8 +288,13 @@ function renderSectionEditor() {
       note.sections[index].title = event.target.value;
       touch();
     });
-    card.querySelector("select").addEventListener("change", (event) => {
+    const [typeSelect, fontSelect] = card.querySelectorAll("select");
+    typeSelect.addEventListener("change", (event) => {
       note.sections[index].type = event.target.value;
+      touch();
+    });
+    fontSelect.addEventListener("change", (event) => {
+      note.sections[index].fontFamily = event.target.value;
       touch();
     });
     card.querySelector("textarea").addEventListener("input", (event) => {
@@ -305,9 +335,11 @@ function renderPreview() {
 function renderPreviewSection(section) {
   const title = escapeHtml(section.title || "제목 없음");
   const body = escapeHtml(section.body || "");
+  const fontFamily = sectionFontFamily(section);
+  const style = fontFamily ? ` style="font-family: ${fontFamily}, var(--note-font), Pretendard, serif"` : "";
   if (section.type === "fold") {
     return `
-      <details class="note-section" open>
+      <details class="note-section" open${style}>
         <summary>${title}</summary>
         <div class="note-section-body">${body}</div>
       </details>
@@ -315,7 +347,7 @@ function renderPreviewSection(section) {
   }
   const extra = section.type === "box" ? " boxed-section" : "";
   return `
-    <section class="note-section${extra}">
+    <section class="note-section${extra}"${style}>
       ${section.title ? `<h3>${title}</h3>` : ""}
       <div class="note-section-body">${body}</div>
     </section>
@@ -368,11 +400,6 @@ function insertTemplate(kind) {
   const template = structuredClone(templates[kind] || templates.profile);
   if (!note.meta.length) note.meta.push(...template.meta);
   note.sections.push(...template.sections);
-  if (!note.accent || note.accent === defaultNote.accent) {
-    note.accent = template.theme.accent;
-    note.paper = template.theme.paper;
-    note.text = template.theme.text;
-  }
   renderAll();
   touch();
   saveNote(`${template.name} 추가됨`, false);
@@ -504,11 +531,14 @@ function ensureNoteShape() {
   note.name ||= "";
   note.alias ||= "";
   note.tagline ||= "";
-  note.accent ||= "#87a9ad";
+  note.accent ||= "#242424";
   note.paper ||= "#ffffff";
-  note.text ||= "#33434a";
+  note.text ||= "#242424";
   note.meta = Array.isArray(note.meta) ? note.meta : [];
   note.sections = Array.isArray(note.sections) ? note.sections : [];
+  note.sections.forEach((section) => {
+    section.fontFamily ||= "default";
+  });
   note.scratch ||= "";
   note.signature ||= "";
   note.format = {
@@ -517,6 +547,11 @@ function ensureNoteShape() {
     lineHeight: Number(note.format?.lineHeight) || 1.88,
     fontFamily: note.format?.fontFamily || "Pretendard",
   };
+}
+
+function sectionFontFamily(section) {
+  if (!section.fontFamily || section.fontFamily === "default") return "";
+  return `'${String(section.fontFamily).replaceAll("'", "\\'")}'`;
 }
 
 function noteToText() {
