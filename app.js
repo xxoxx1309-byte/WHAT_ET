@@ -253,12 +253,12 @@ function drawSheet() {
 
   Object.entries(slots).forEach(([id, slot]) => drawImageSlot(id, slot, theme));
 
-  softCard(730, 600, 320, 320, 18, theme.surface, theme.shadow);
-  softCard(1080, 600, 320, 320, 18, theme.surface, theme.shadow);
-  drawText("헤어 & 얼굴", 760, 650, 29, 250, 900, "left", theme.text, "Pretendard");
-  drawWrapped(state.summary || "외관 특징을 입력하세요.", 760, 705, 20, 260, 30, 500, theme.text);
-  drawText("의상 & 기타", 1110, 650, 29, 250, 900, "left", theme.text, "Pretendard");
-  drawWrapped(clampText(state.memo || "의상과 소품 설명을 입력하세요.", 92), 1110, 705, 20, 260, 30, 500, theme.text);
+  softCard(730, 600, 330, 320, 18, theme.surface, theme.shadow);
+  softCard(1090, 600, 330, 320, 18, theme.surface, theme.shadow);
+  drawText("헤어 & 얼굴", 760, 650, 29, 260, 900, "left", theme.text, "Pretendard");
+  drawWrapped(state.summary || "외관 특징을 입력하세요.", 760, 705, 18, 270, 28, 500, theme.text);
+  drawText("의상 & 기타", 1120, 650, 29, 260, 900, "left", theme.text, "Pretendard");
+  drawWrapped(state.memo || "의상과 소품 설명을 입력하세요.", 1120, 705, 18, 270, 28, 500, theme.text);
 
   roundRect(755, 1012, 430, 12, 6, theme.secondary);
   drawText(hashKeywords(state.keywords), 125, 1056, 26, 650, 800, "left", theme.muted);
@@ -309,11 +309,6 @@ function metaText() {
 function hashKeywords(text) {
   const words = String(text).split(/,|\s/).map((word) => word.trim()).filter(Boolean).slice(0, 3);
   return words.length ? words.map((word) => `#${word}`).join("  ") : "";
-}
-
-function clampText(text, maxLength) {
-  const normalized = String(text).replace(/\s+/g, " ").trim();
-  return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}...` : normalized;
 }
 
 function canvasPoint(event) {
@@ -380,36 +375,11 @@ function drawWrapped(text, x, y, size, maxWidth, lineHeight, weight = 700, color
   ctx.textBaseline = "top";
   ctx.fillStyle = color;
   String(text).split("\n").forEach((paragraph) => {
-    let line = "";
-    splitForWrap(paragraph).forEach((token) => {
-      const test = line + token;
-      if (ctx.measureText(test).width > maxWidth && line.trim()) {
-        ctx.fillText(line, x, y);
-        y += lineHeight;
-        line = token.trimStart();
-      } else {
-        line = test;
-      }
-    });
-    ctx.fillText(line, x, y);
+    const explicitLine = paragraph.trim();
+    if (explicitLine) ctx.fillText(explicitLine, x, y);
     y += lineHeight;
   });
   ctx.restore();
-}
-
-function splitForWrap(text) {
-  const tokens = [];
-  String(text).split(/(\s+)/).forEach((part) => {
-    if (!part) return;
-    if (/\s+/.test(part)) {
-      tokens.push(part);
-    } else if (/[\u3131-\uD79D]/.test(part) && part.length > 12) {
-      tokens.push(...Array.from(part));
-    } else {
-      tokens.push(part);
-    }
-  });
-  return tokens;
 }
 
 function getTheme() {
