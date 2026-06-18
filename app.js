@@ -1,6 +1,7 @@
 const canvas = document.querySelector("#sheet");
 const ctx = canvas.getContext("2d");
 const picker = document.querySelector("#imagePicker");
+const stickerPicker = document.querySelector("#stickerPicker");
 const STORAGE_KEY = "what_et.savedCharacters.v1";
 const textFieldIds = ["name", "age", "height", "gender", "keywords", "credit", "summary", "memo"];
 
@@ -27,9 +28,11 @@ const state = {
     { label: "피부", color: "#ffffff", fixed: true, set: false },
   ],
   images: {},
+  stickers: [],
 };
 
 let selectedSlot = "main";
+let selectedStickerId = null;
 let pendingSlot = null;
 let drag = null;
 let activeSaveId = null;
@@ -61,7 +64,13 @@ function init() {
   document.querySelector("#addColor").addEventListener("click", addColor);
   document.querySelector("#saveCharacter").addEventListener("click", saveCharacter);
   document.querySelector("#newCharacter").addEventListener("click", resetCharacter);
+  document.querySelector("#addSticker").addEventListener("click", requestSticker);
+  document.querySelector("#stickerSize").addEventListener("input", updateSelectedSticker);
+  document.querySelector("#stickerX").addEventListener("input", updateSelectedSticker);
+  document.querySelector("#stickerY").addEventListener("input", updateSelectedSticker);
+  document.querySelector("#deleteSticker").addEventListener("click", deleteSelectedSticker);
   picker.addEventListener("change", importImage);
+  stickerPicker.addEventListener("change", importSticker);
 
   canvas.addEventListener("dblclick", openClickedSlot);
   canvas.addEventListener("pointerdown", startDrag);
@@ -72,7 +81,9 @@ function init() {
   renderSlots();
   renderSwatches();
   renderSaveList();
+  renderStickers();
   syncAdjust();
+  syncStickerAdjust();
   draw();
   document.fonts?.ready.then(draw);
 }
@@ -88,6 +99,30 @@ function renderSlots() {
     card.addEventListener("click", () => {
       selectSlot(id);
       requestImage(id);
+    });
+    list.append(card);
+  });
+}
+
+function renderStickers() {
+  const list = document.querySelector("#stickerList");
+  list.innerHTML = "";
+  if (!state.stickers.length) {
+    list.innerHTML = `<p class="empty-save">추가된 스티커가 없습니다.</p>`;
+  }
+  state.stickers.forEach((sticker, index) => {
+    const card = document.createElement("button");
+    card.className = `sticker-card ${sticker.id === selectedStickerId ? "active" : ""}`;
+    card.type = "button";
+    card.innerHTML = `
+      <span>스티커 ${index + 1}</span>
+      <small>${Math.round(sticker.w)}px</small>
+    `;
+    card.addEventListener("click", () => {
+      selectedStickerId = sticker.id;
+      renderStickers();
+      syncStickerAdjust();
+      draw();
     });
     list.append(card);
   });
@@ -234,11 +269,15 @@ function resetCharacter() {
   Object.keys(slots).forEach((id) => {
     state.images[id] = { src: "", img: null, zoom: 1, x: 0, y: 0, mode: "fill" };
   });
+  state.stickers = [];
   selectedSlot = "main";
+  selectedStickerId = null;
   renderSlots();
   renderSwatches();
   renderSaveList();
+  renderStickers();
   syncAdjust();
+  syncStickerAdjust();
   draw();
   setSaveStatus("새 작업 시작");
 }
@@ -257,11 +296,37 @@ function syncAdjust() {
   document.querySelector("#offsetY").value = image.y;
 }
 
+function syncStickerAdjust() {
+  const sticker = getSelectedSticker();
+  document.querySelector("#selectedStickerName").textContent = `선택된 스티커: ${sticker ? sticker.label : "없음"}`;
+  document.querySelector("#stickerSize").disabled = !sticker;
+  document.querySelector("#stickerX").disabled = !sticker;
+  document.querySelector("#stickerY").disabled = !sticker;
+  document.querySelector("#deleteSticker").disabled = !sticker;
+  if (!sticker) return;
+  document.querySelector("#stickerSize").value = Math.round(sticker.w);
+  document.querySelector("#stickerX").value = Math.round(sticker.x);
+  document.querySelector("#stickerY").value = Math.round(sticker.y);
+}
+
 function updateSelectedImage() {
   const image = state.images[selectedSlot];
   image.zoom = Number(document.querySelector("#zoom").value);
   image.x = Number(document.querySelector("#offsetX").value);
   image.y = Number(document.querySelector("#offsetY").value);
+  draw();
+}
+
+function updateSelectedSticker() {
+  const sticker = getSelectedSticker();
+  if (!sticker) return;
+  const size = Number(document.querySelector("#stickerSize").value);
+  const ratio = sticker.naturalH / sticker.naturalW || 1;
+  sticker.w = size;
+  sticker.h = Math.round(size * ratio);
+  sticker.x = Number(document.querySelector("#stickerX").value);
+  sticker.y = Number(document.querySelector("#stickerY").value);
+  renderStickers();
   draw();
 }
 
@@ -312,7 +377,52 @@ function importImage(event) {
   reader.readAsDataURL(file);
 }
 
+function requestSticker() {
+  stickerPicker.value = "";
+  stickerPicker.click();
+}
+
+function importSticker(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const img = await loadImage(reader.result);
+    if (!img) return;
+    const width = 180;
+    const height = Math.round(width * (img.height / img.width || 1));
+    const sticker = {
+      id: makeId(),
+      label: `스티커 ${state.stickers.length + 1}`,
+      src: reader.result,
+      img,
+      naturalW: img.width,
+      naturalH: img.height,
+      x: 1180,
+      y: 900,
+      w: width,
+      h: height,
+    };
+    state.stickers.push(sticker);
+    selectedStickerId = sticker.id;
+    renderStickers();
+    syncStickerAdjust();
+    draw();
+  };
+  reader.readAsDataURL(file);
+}
+
+function deleteSelectedSticker() {
+  if (!selectedStickerId) return;
+  state.stickers = state.stickers.filter((sticker) => sticker.id !== selectedStickerId);
+  selectedStickerId = state.stickers.at(-1)?.id || null;
+  renderStickers();
+  syncStickerAdjust();
+  draw();
+}
+
 function openClickedSlot(event) {
+  if (hitSticker(canvasPoint(event))) return;
   const id = hitSlot(canvasPoint(event));
   if (id) {
     selectSlot(id);
@@ -322,17 +432,35 @@ function openClickedSlot(event) {
 
 function startDrag(event) {
   const point = canvasPoint(event);
+  const sticker = hitSticker(point);
+  if (sticker) {
+    selectedStickerId = sticker.id;
+    renderStickers();
+    syncStickerAdjust();
+    drag = { type: "sticker", id: sticker.id, start: point, x: sticker.x, y: sticker.y };
+    draw();
+    return;
+  }
   const id = hitSlot(point);
   if (!id) return;
   selectSlot(id);
   const image = state.images[id];
   if (!image.src) return;
-  drag = { id, start: point, x: image.x, y: image.y };
+  drag = { type: "slot", id, start: point, x: image.x, y: image.y };
 }
 
 function moveDrag(event) {
   if (!drag) return;
   const point = canvasPoint(event);
+  if (drag.type === "sticker") {
+    const sticker = state.stickers.find((item) => item.id === drag.id);
+    if (!sticker) return;
+    sticker.x = Math.round(drag.x + point.x - drag.start.x);
+    sticker.y = Math.round(drag.y + point.y - drag.start.y);
+    syncStickerAdjust();
+    draw();
+    return;
+  }
   const image = state.images[drag.id];
   image.x = Math.round(drag.x + point.x - drag.start.x);
   image.y = Math.round(drag.y + point.y - drag.start.y);
@@ -386,6 +514,7 @@ function drawSheet() {
 
   roundRect(780, 980, 390, 10, 5, theme.secondary);
   drawText(hashKeywords(state.keywords), 125, 1056, 26, 650, 800, "left", theme.muted);
+  drawStickers();
 }
 
 function drawImageSlot(id, slot, theme) {
@@ -416,6 +545,13 @@ function drawFittedImage(img, slot, image) {
   ctx.drawImage(img, slot.x + slot.w / 2 - w / 2 + image.x, slot.y + slot.h / 2 - h / 2 + image.y, w, h);
 }
 
+function drawStickers() {
+  state.stickers.forEach((sticker) => {
+    if (!sticker.img) return;
+    ctx.drawImage(sticker.img, sticker.x, sticker.y, sticker.w, sticker.h);
+  });
+}
+
 function exportPng() {
   const link = document.createElement("a");
   link.download = `${state.name || "WHAT_ET"}.png`;
@@ -428,6 +564,17 @@ function serializeState() {
     version: 1,
     characterColors: state.characterColors.map((item) => ({ ...item })),
     images: {},
+    stickers: state.stickers.map((sticker) => ({
+      id: sticker.id,
+      label: sticker.label,
+      src: sticker.src,
+      naturalW: sticker.naturalW,
+      naturalH: sticker.naturalH,
+      x: sticker.x,
+      y: sticker.y,
+      w: sticker.w,
+      h: sticker.h,
+    })),
   };
   textFieldIds.forEach((id) => {
     data[id] = state[id];
@@ -473,10 +620,29 @@ async function applySavedData(data = {}) {
     }
   }));
 
+  state.stickers = await Promise.all((Array.isArray(data.stickers) ? data.stickers : []).map(async (sticker, index) => {
+    const img = sticker.src ? await loadImage(sticker.src) : null;
+    return {
+      id: sticker.id || makeId(),
+      label: sticker.label || `스티커 ${index + 1}`,
+      src: sticker.src || "",
+      img,
+      naturalW: Number(sticker.naturalW) || img?.width || 1,
+      naturalH: Number(sticker.naturalH) || img?.height || 1,
+      x: Number(sticker.x) || 0,
+      y: Number(sticker.y) || 0,
+      w: Number(sticker.w) || 180,
+      h: Number(sticker.h) || 180,
+    };
+  }));
+  selectedStickerId = state.stickers[0]?.id || null;
+
   selectedSlot = "main";
   renderSlots();
   renderSwatches();
+  renderStickers();
   syncAdjust();
+  syncStickerAdjust();
   draw();
 }
 
@@ -551,6 +717,19 @@ function hitSlot(point) {
   return Object.entries(slots).find(([, slot]) => (
     point.x >= slot.x && point.x <= slot.x + slot.w && point.y >= slot.y && point.y <= slot.y + slot.h
   ))?.[0];
+}
+
+function hitSticker(point) {
+  return [...state.stickers].reverse().find((sticker) => (
+    point.x >= sticker.x
+    && point.x <= sticker.x + sticker.w
+    && point.y >= sticker.y
+    && point.y <= sticker.y + sticker.h
+  ));
+}
+
+function getSelectedSticker() {
+  return state.stickers.find((sticker) => sticker.id === selectedStickerId) || null;
 }
 
 function softCard(x, y, w, h, r, fill = "#fff", shadow = "rgba(93, 86, 150, 0.12)") {

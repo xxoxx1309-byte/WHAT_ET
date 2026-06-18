@@ -245,6 +245,31 @@ input[type="color"] {
   font-weight: 600;
 }
 
+.sticker-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.sticker-card {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  min-width: 0;
+  text-align: left;
+}
+
+.sticker-card.active {
+  border-color: var(--primary);
+  box-shadow: inset 4px 0 0 var(--primary);
+}
+
+.sticker-card small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .adjust {
   display: grid;
   gap: 12px;
@@ -385,6 +410,12 @@ input[type="color"] {
 }
 
 .color-remove:disabled {
+  color: #b6b1c0;
+  cursor: default;
+  background: #f6f2f8;
+}
+
+#deleteSticker:disabled {
   color: #b6b1c0;
   cursor: default;
   background: #f6f2f8;
