@@ -95,7 +95,10 @@ function renderSwatches() {
     row.className = "color-row";
     row.innerHTML = `
       <input class="color-name" type="text" value="${escapeHtml(item.label)}" aria-label="색 이름">
-      <input class="color-picker" type="color" value="${item.color}" aria-label="${escapeHtml(item.label)} 색">
+      <label class="color-swatch-button" style="--swatch:${item.color}">
+        <input class="color-picker" type="color" value="${item.color}" aria-label="${escapeHtml(item.label)} 색">
+      </label>
+      <input class="hex-input" type="text" value="${item.set ? item.color.toUpperCase() : ""}" placeholder="#HEX" maxlength="7" aria-label="헥스코드">
       <button class="color-reset" type="button">${item.set ? "해제" : "미설정"}</button>
       <button class="color-remove" type="button" ${item.fixed ? "disabled" : ""}>삭제</button>
     `;
@@ -103,12 +106,28 @@ function renderSwatches() {
       state.characterColors[index].label = event.target.value;
       draw();
     });
-    row.querySelector(".color-picker").addEventListener("input", (event) => {
-      state.characterColors[index].color = event.target.value;
+    const swatchButton = row.querySelector(".color-swatch-button");
+    const colorPicker = row.querySelector(".color-picker");
+    const hexInput = row.querySelector(".hex-input");
+    colorPicker.addEventListener("input", (event) => {
+      const value = event.target.value;
+      state.characterColors[index].color = value;
       state.characterColors[index].set = true;
-      renderSwatches();
+      swatchButton.style.setProperty("--swatch", value);
+      hexInput.value = value.toUpperCase();
       draw();
     });
+    colorPicker.addEventListener("change", renderSwatches);
+    hexInput.addEventListener("input", (event) => {
+      const value = normalizeHex(event.target.value);
+      if (!value) return;
+      state.characterColors[index].color = value;
+      state.characterColors[index].set = true;
+      swatchButton.style.setProperty("--swatch", value);
+      colorPicker.value = value;
+      draw();
+    });
+    hexInput.addEventListener("change", renderSwatches);
     row.querySelector(".color-reset").addEventListener("click", () => {
       state.characterColors[index].set = false;
       draw();
@@ -256,6 +275,9 @@ function drawSheet() {
     ctx.arc(1240 + index * 42, 205, 16, 0, Math.PI * 2);
     ctx.fillStyle = item.color;
     ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = isLightHex(item.color) ? hexToRgba(theme.text, 0.28) : hexToRgba(theme.surface, 0.9);
+    ctx.stroke();
   });
 
   Object.entries(slots).forEach(([id, slot]) => drawImageSlot(id, slot, theme));
@@ -457,8 +479,9 @@ function generatePalette(baseColor) {
   const hsl = hexToHsl(baseColor);
   const isDark = hsl.l < 0.38;
   const isVeryLight = hsl.l > 0.78;
-  const primary = hslToHex(hsl.h, clamp(hsl.s * 0.9, 0.24, 0.72), clamp(hsl.l, 0.28, 0.58));
-  const secondary = hslToHex(hsl.h, clamp(hsl.s * 0.55, 0.18, 0.48), isDark ? 0.78 : 0.84);
+  const primaryLightness = hsl.l > 0.62 ? 0.46 : clamp(hsl.l, 0.28, 0.58);
+  const primary = hslToHex(hsl.h, clamp(hsl.s * 1.05, 0.34, 0.78), primaryLightness);
+  const secondary = hslToHex(hsl.h, clamp(hsl.s * 0.48, 0.16, 0.46), isDark ? 0.78 : 0.86);
   const accentHue = (hsl.h + 28) % 360;
   const accent = hslToHex(accentHue, clamp(hsl.s * 0.65, 0.22, 0.58), isVeryLight ? 0.72 : 0.76);
   const surface = hslToHex(hsl.h, clamp(hsl.s * 0.12, 0.03, 0.12), 0.985);
@@ -512,6 +535,20 @@ function mix(a, b, amount) {
 function hexToRgb(hex) {
   const clean = hex.replace("#", "");
   return [0, 2, 4].map((start) => parseInt(clean.slice(start, start + 2), 16));
+}
+
+function isLightHex(hex) {
+  const [r, g, b] = hexToRgb(hex);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 214;
+}
+
+function normalizeHex(value) {
+  const clean = value.trim().replace(/^#/, "");
+  if (/^[0-9a-fA-F]{6}$/.test(clean)) return `#${clean.toLowerCase()}`;
+  if (/^[0-9a-fA-F]{3}$/.test(clean)) {
+    return `#${clean.split("").map((char) => char + char).join("").toLowerCase()}`;
+  }
+  return "";
 }
 
 function rgbToHex(rgb) {
