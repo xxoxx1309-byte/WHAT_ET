@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WHAT_ET 설정 노트</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%2387a9ad' d='M32 4l7.9 17 18.6 2.3-13.7 12.8 3.6 18.4L32 45.4 15.6 54.5l3.6-18.4L5.5 23.3 24.1 21z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="settings.css?v=note1">
+</head>
+<body>
+  <main class="note-app">
+    <aside class="editor">
+      <header class="editor-head">
+        <a class="back-link" href="index.html">WHAT_ET</a>
+        <div>
+          <p class="eyebrow">CHARACTER NOTE MAKER</p>
+          <h1>설정 노트</h1>
+        </div>
+      </header>
+
+      <section class="panel-block">
+        <h2>문서</h2>
+        <label>캐릭터 이름<input id="characterName" type="text" placeholder="이름" autocomplete="off"></label>
+        <label>영문/별칭<input id="characterAlias" type="text" placeholder="alias" autocomplete="off"></label>
+        <label>한 줄 문장<input id="tagline" type="text" placeholder="캐릭터를 관통하는 문장" autocomplete="off"></label>
+        <label>포인트 컬러<input id="accentColor" type="color" value="#87a9ad"></label>
+      </section>
+
+      <section class="panel-block">
+        <div class="block-title">
+          <h2>기본 항목</h2>
+          <button id="addMeta" type="button">항목 추가</button>
+        </div>
+        <div id="metaEditor" class="stack"></div>
+      </section>
+
+      <section class="panel-block">
+        <div class="block-title">
+          <h2>본문 섹션</h2>
+          <button id="addSection" type="button">섹션 추가</button>
+        </div>
+        <div id="sectionEditor" class="stack"></div>
+      </section>
+
+      <section class="panel-block">
+        <div class="button-grid">
+          <button id="saveNote" class="primary" type="button">저장</button>
+          <button id="newNote" type="button">새 문서</button>
+        </div>
+        <p id="saveStatus" class="hint" aria-live="polite"></p>
+      </section>
+    </aside>
+
+    <section class="preview-wrap">
+      <div class="preview-toolbar">
+        <strong>WHAT_ET NOTE</strong>
+        <button id="printNote" type="button">인쇄/PDF</button>
+      </div>
+      <article id="notePreview" class="note-paper"></article>
+    </section>
+  </main>
+  <script src="settings.js?v=note1"></script>
+</body>
+</html>
