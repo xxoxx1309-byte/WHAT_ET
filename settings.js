@@ -60,6 +60,7 @@ function init() {
   fields.bodySize.addEventListener("input", () => updateFormat("bodySize", Number(fields.bodySize.value)));
   fields.lineHeight.addEventListener("input", () => updateFormat("lineHeight", Number(fields.lineHeight.value)));
   document.querySelector("#focusMode").addEventListener("click", toggleFocusMode);
+  document.querySelector("#exitFocus").addEventListener("click", exitFocusMode);
   document.querySelector("#insertTemplate").addEventListener("click", insertTemplate);
   document.querySelector("#addMeta").addEventListener("click", addMeta);
   document.querySelector("#addSection").addEventListener("click", addSection);
@@ -337,6 +338,10 @@ function getTemplate(kind) {
 
 function toggleFocusMode() {
   document.body.classList.toggle("focus-mode");
+}
+
+function exitFocusMode() {
+  document.body.classList.remove("focus-mode");
 }
 
 function handleSectionAction(action, index) {

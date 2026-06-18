@@ -227,6 +227,10 @@ input[type="color"] {
   gap: 8px;
 }
 
+.focus-exit {
+  display: none;
+}
+
 .theme-button {
   display: inline-flex;
   align-items: center;
@@ -467,6 +471,10 @@ details.note-section .note-section-body {
 
 .focus-mode .preview-wrap {
   min-height: 100vh;
+}
+
+.focus-mode .focus-exit {
+  display: inline-flex;
 }
 
 @media (max-width: 980px) {
