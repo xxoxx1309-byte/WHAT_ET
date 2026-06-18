@@ -3,7 +3,7 @@ const ctx = canvas.getContext("2d");
 const picker = document.querySelector("#imagePicker");
 
 const slots = {
-  main: { label: "메인 전신", x: 120, y: 330, w: 520, h: 690, r: 28 },
+  main: { label: "메인 전신", x: 110, y: 340, w: 480, h: 660, r: 28 },
   detail1: { label: "상세컷 1", x: 720, y: 330, w: 230, h: 210, r: 24 },
   detail2: { label: "상세컷 2", x: 980, y: 330, w: 230, h: 210, r: 24 },
   detail3: { label: "상세컷 3", x: 1240, y: 330, w: 230, h: 210, r: 24 },
@@ -273,6 +273,7 @@ function drawSheet() {
 
 function drawImageSlot(id, slot, theme) {
   ctx.save();
+  ctx.beginPath();
   pathRoundRect(slot.x, slot.y, slot.w, slot.h, slot.r);
   ctx.clip();
   ctx.fillStyle = theme.slot;
@@ -349,6 +350,7 @@ function roundRect(x, y, w, h, r, fill) {
 }
 
 function pathRoundRect(x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
   ctx.moveTo(x + r, y);
   ctx.lineTo(x + w - r, y);
   ctx.quadraticCurveTo(x + w, y, x + w, y + r);
