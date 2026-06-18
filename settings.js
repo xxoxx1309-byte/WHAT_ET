@@ -8,6 +8,72 @@ const themes = [
   { name: "먹색", accent: "#30363a", paper: "#ffffff", text: "#25292c" },
 ];
 
+const templates = {
+  profile: {
+    name: "기본 설정",
+    description: "프로필, 외형, 성격을 빠르게 정리합니다.",
+    theme: themes[0],
+    meta: [
+      { label: "나이", value: "" },
+      { label: "성별", value: "" },
+      { label: "신장", value: "" },
+      { label: "직업", value: "" },
+    ],
+    sections: [
+      { title: "개요", type: "plain", body: "" },
+      { title: "외형", type: "plain", body: "" },
+      { title: "성격", type: "plain", body: "" },
+      { title: "기타", type: "box", body: "" },
+    ],
+  },
+  story: {
+    name: "서사 기록",
+    description: "현재, 과거, 전환점, 숨겨진 기록을 나눕니다.",
+    theme: themes[1],
+    meta: [
+      { label: "나이", value: "" },
+      { label: "성별", value: "" },
+      { label: "신장", value: "" },
+      { label: "직업", value: "" },
+    ],
+    sections: [
+      { title: "현재", type: "plain", body: "" },
+      { title: "과거", type: "plain", body: "" },
+      { title: "전환점", type: "plain", body: "" },
+      { title: "숨겨진 기록", type: "fold", body: "" },
+    ],
+  },
+  interview: {
+    name: "인터뷰 로그",
+    description: "기록자, 대상, 날짜와 인터뷰 박스를 만듭니다.",
+    theme: themes[4],
+    meta: [
+      { label: "기록자", value: "" },
+      { label: "대상", value: "" },
+      { label: "날짜", value: "" },
+    ],
+    sections: [
+      { title: "인터뷰 로그", type: "box", body: "" },
+      { title: "관찰 메모", type: "plain", body: "" },
+    ],
+  },
+  relation: {
+    name: "관계 정리",
+    description: "호칭, 상태, 중요 사건을 관계표처럼 정리합니다.",
+    theme: themes[3],
+    meta: [
+      { label: "관계", value: "" },
+      { label: "호칭", value: "" },
+      { label: "상태", value: "" },
+    ],
+    sections: [
+      { title: "첫 인상", type: "plain", body: "" },
+      { title: "현재 관계", type: "plain", body: "" },
+      { title: "중요 사건", type: "box", body: "" },
+    ],
+  },
+};
+
 const defaultNote = {
   name: "",
   alias: "",
@@ -42,7 +108,6 @@ const fields = {
   paper: document.querySelector("#paperColor"),
   text: document.querySelector("#textColor"),
   scratch: document.querySelector("#scratchNote"),
-  templateKind: document.querySelector("#templateKind"),
   paperWidth: document.querySelector("#paperWidth"),
   bodySize: document.querySelector("#bodySize"),
   lineHeight: document.querySelector("#lineHeight"),
@@ -61,7 +126,6 @@ function init() {
   fields.lineHeight.addEventListener("input", () => updateFormat("lineHeight", Number(fields.lineHeight.value)));
   document.querySelector("#focusMode").addEventListener("click", toggleFocusMode);
   document.querySelector("#exitFocus").addEventListener("click", exitFocusMode);
-  document.querySelector("#insertTemplate").addEventListener("click", insertTemplate);
   document.querySelector("#addMeta").addEventListener("click", addMeta);
   document.querySelector("#addSection").addEventListener("click", addSection);
   document.querySelector("#saveNote").addEventListener("click", () => saveNote("저장됨"));
@@ -70,6 +134,7 @@ function init() {
   document.querySelector("#exportPng").addEventListener("click", exportPng);
   document.querySelector("#exportPdf").addEventListener("click", () => window.print());
   renderThemes();
+  renderTemplateCards();
   renderAll();
 }
 
@@ -111,6 +176,26 @@ function renderThemes() {
       renderAll();
       touch();
     });
+    wrap.append(button);
+  });
+}
+
+function renderTemplateCards() {
+  const wrap = document.querySelector("#templateCards");
+  wrap.innerHTML = "";
+  Object.entries(templates).forEach(([key, template]) => {
+    const button = document.createElement("button");
+    button.className = "template-card";
+    button.type = "button";
+    button.innerHTML = `
+      <span class="template-card-head">
+        <strong>${template.name}</strong>
+        <span class="theme-chip" style="--chip:${template.theme.accent}"></span>
+      </span>
+      <span>${template.description}</span>
+      <small>${template.meta.length}개 항목 · ${template.sections.length}개 섹션</small>
+    `;
+    button.addEventListener("click", () => insertTemplate(key));
     wrap.append(button);
   });
 }
@@ -266,8 +351,8 @@ function addSection() {
   touch();
 }
 
-function insertTemplate() {
-  const template = getTemplate(fields.templateKind.value);
+function insertTemplate(kind) {
+  const template = structuredClone(templates[kind] || templates.profile);
   if (!note.meta.length) note.meta.push(...template.meta);
   note.sections.push(...template.sections);
   if (!note.accent || note.accent === defaultNote.accent) {
@@ -277,63 +362,6 @@ function insertTemplate() {
   }
   renderAll();
   touch();
-}
-
-function getTemplate(kind) {
-  const commonMeta = [
-    { label: "나이", value: "" },
-    { label: "성별", value: "" },
-    { label: "신장", value: "" },
-    { label: "직업", value: "" },
-  ];
-  const templates = {
-    profile: {
-      theme: themes[0],
-      meta: commonMeta,
-      sections: [
-        { title: "개요", type: "plain", body: "" },
-        { title: "외형", type: "plain", body: "" },
-        { title: "성격", type: "plain", body: "" },
-        { title: "기타", type: "box", body: "" },
-      ],
-    },
-    story: {
-      theme: themes[1],
-      meta: commonMeta,
-      sections: [
-        { title: "현재", type: "plain", body: "" },
-        { title: "과거", type: "plain", body: "" },
-        { title: "전환점", type: "plain", body: "" },
-        { title: "숨겨진 기록", type: "fold", body: "" },
-      ],
-    },
-    interview: {
-      theme: themes[4],
-      meta: [
-        { label: "기록자", value: "" },
-        { label: "대상", value: "" },
-        { label: "날짜", value: "" },
-      ],
-      sections: [
-        { title: "인터뷰 로그", type: "box", body: "" },
-        { title: "관찰 메모", type: "plain", body: "" },
-      ],
-    },
-    relation: {
-      theme: themes[3],
-      meta: [
-        { label: "관계", value: "" },
-        { label: "호칭", value: "" },
-        { label: "상태", value: "" },
-      ],
-      sections: [
-        { title: "첫 인상", type: "plain", body: "" },
-        { title: "현재 관계", type: "plain", body: "" },
-        { title: "중요 사건", type: "box", body: "" },
-      ],
-    },
-  };
-  return structuredClone(templates[kind] || templates.profile);
 }
 
 function toggleFocusMode() {
