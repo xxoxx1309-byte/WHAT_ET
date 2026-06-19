@@ -427,6 +427,59 @@ input[type="color"] {
   font-weight: 800;
 }
 
+.note-save-list {
+  display: grid;
+  gap: 8px;
+  max-height: 220px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.note-save-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 54px;
+  gap: 8px;
+}
+
+.note-save-load {
+  display: grid;
+  justify-items: start;
+  min-height: 54px;
+  padding: 9px 11px;
+  text-align: left;
+}
+
+.note-save-load strong,
+.note-save-load small {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-save-load small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.note-save-item.active .note-save-load {
+  border-color: var(--accent-dark);
+  box-shadow: inset 0 0 0 1px var(--accent-dark);
+}
+
+.note-save-delete {
+  min-height: 54px;
+  padding-inline: 8px;
+}
+
+.empty-note-save {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .theme-chip {
   width: 18px;
   height: 18px;

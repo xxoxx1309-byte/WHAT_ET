@@ -1,4 +1,6 @@
 const STORAGE_KEY = "what_et.characterNote.v2";
+const NOTE_LIST_KEY = "what_et.characterNotes.v1";
+const ACTIVE_NOTE_KEY = "what_et.activeCharacterNote.v1";
 
 const fontOptions = [
   { value: "default", label: "기본 폰트" },
@@ -118,6 +120,7 @@ const defaultNote = {
   },
 };
 
+let activeNoteId = localStorage.getItem(ACTIVE_NOTE_KEY) || "";
 let note = loadNote();
 let history = [];
 
@@ -160,6 +163,7 @@ function init() {
   renderThemes();
   renderTemplateCards();
   renderAll();
+  renderNoteList();
   updateUndoButton();
 }
 
@@ -521,10 +525,12 @@ function touch() {
 }
 
 function saveNote(message = "저장됨", showTime = true) {
+  persistActiveNote();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(note));
   const suffix = showTime ? ` · ${new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit" }).format(new Date())}` : "";
   document.querySelector("#saveStatus").textContent = `${message}${suffix}`;
   document.querySelector("#savedState").textContent = message;
+  renderNoteList();
 }
 
 async function shareNote() {
@@ -557,21 +563,138 @@ async function exportPng() {
 }
 
 function loadNote() {
+  const savedNotes = readSavedNotes();
+  if (savedNotes.length) {
+    const active = savedNotes.find((item) => item.id === activeNoteId) || savedNotes[0];
+    activeNoteId = active.id;
+    localStorage.setItem(ACTIVE_NOTE_KEY, activeNoteId);
+    return structuredClone(active.data);
+  }
+
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-    if (saved && Array.isArray(saved.meta) && Array.isArray(saved.sections)) return saved;
+    if (saved && Array.isArray(saved.meta) && Array.isArray(saved.sections)) {
+      activeNoteId = createId();
+      localStorage.setItem(ACTIVE_NOTE_KEY, activeNoteId);
+      localStorage.setItem(NOTE_LIST_KEY, JSON.stringify([makeNoteEntry(saved)]));
+      return saved;
+    }
   } catch (error) {
     // Ignore broken local data and fall back to the starter document.
   }
+  activeNoteId = createId();
+  localStorage.setItem(ACTIVE_NOTE_KEY, activeNoteId);
   return structuredClone(defaultNote);
 }
 
 function resetNote() {
   if (!confirm("새 설정 문서를 시작할까요? 현재 내용은 저장본에서 사라집니다.")) return;
   remember();
+  activeNoteId = createId();
+  localStorage.setItem(ACTIVE_NOTE_KEY, activeNoteId);
   note = structuredClone(defaultNote);
   saveNote("새 문서 시작");
   renderAll();
+}
+
+function persistActiveNote() {
+  if (!activeNoteId) {
+    activeNoteId = createId();
+    localStorage.setItem(ACTIVE_NOTE_KEY, activeNoteId);
+  }
+  const saved = readSavedNotes();
+  const entry = makeNoteEntry(note);
+  const index = saved.findIndex((item) => item.id === activeNoteId);
+  if (index >= 0) saved[index] = entry;
+  else saved.unshift(entry);
+  localStorage.setItem(NOTE_LIST_KEY, JSON.stringify(saved));
+  localStorage.setItem(ACTIVE_NOTE_KEY, activeNoteId);
+}
+
+function makeNoteEntry(data) {
+  return {
+    id: activeNoteId,
+    name: data.name || "무제 설정",
+    summary: data.tagline || data.sections?.find((section) => section.title || section.body)?.title || "설정 노트",
+    updatedAt: Date.now(),
+    data: structuredClone(data),
+  };
+}
+
+function renderNoteList() {
+  const wrap = document.querySelector("#noteList");
+  const saved = readSavedNotes();
+  if (!saved.length) {
+    wrap.innerHTML = `<p class="empty-note-save">저장된 문서가 없습니다.</p>`;
+    return;
+  }
+  wrap.innerHTML = "";
+  saved.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = `note-save-item ${item.id === activeNoteId ? "active" : ""}`;
+    row.innerHTML = `
+      <button class="note-save-load" type="button">
+        <strong>${escapeHtml(item.name)}</strong>
+        <small>${escapeHtml(item.summary || "설정 노트")} · ${formatSavedDate(item.updatedAt)}</small>
+      </button>
+      <button class="note-save-delete danger" type="button" aria-label="${escapeHtml(item.name)} 삭제">삭제</button>
+    `;
+    row.querySelector(".note-save-load").addEventListener("click", () => loadSavedNote(item.id));
+    row.querySelector(".note-save-delete").addEventListener("click", () => deleteSavedNote(item.id));
+    wrap.append(row);
+  });
+}
+
+function loadSavedNote(id) {
+  const item = readSavedNotes().find((saved) => saved.id === id);
+  if (!item) return;
+  activeNoteId = item.id;
+  localStorage.setItem(ACTIVE_NOTE_KEY, activeNoteId);
+  note = structuredClone(item.data);
+  history = [];
+  renderAll();
+  saveNote("불러옴", false);
+}
+
+function deleteSavedNote(id) {
+  const saved = readSavedNotes();
+  const item = saved.find((entry) => entry.id === id);
+  if (!item || !confirm(`"${item.name}" 문서를 삭제할까요?`)) return;
+  const next = saved.filter((entry) => entry.id !== id);
+  localStorage.setItem(NOTE_LIST_KEY, JSON.stringify(next));
+  if (id === activeNoteId) {
+    if (next.length) {
+      activeNoteId = next[0].id;
+      note = structuredClone(next[0].data);
+    } else {
+      activeNoteId = createId();
+      note = structuredClone(defaultNote);
+    }
+    localStorage.setItem(ACTIVE_NOTE_KEY, activeNoteId);
+    history = [];
+    renderAll();
+    saveNote(next.length ? "다른 문서 불러옴" : "새 문서 시작", false);
+  } else {
+    renderNoteList();
+  }
+}
+
+function readSavedNotes() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(NOTE_LIST_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.filter((item) => item?.id && item?.data) : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function formatSavedDate(value) {
+  if (!value) return "저장 시간 없음";
+  return new Intl.DateTimeFormat("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+}
+
+function createId() {
+  return crypto.randomUUID ? crypto.randomUUID() : `note-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function updateStats() {
