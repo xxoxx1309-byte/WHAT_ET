@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WHAT_ET 후원 관리</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23242424' d='M32 4l7.9 17 18.6 2.3-13.7 12.8 3.6 18.4L32 45.4 15.6 54.5l3.6-18.4L5.5 23.3 24.1 21z'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="../../support.css?v=support1">
+  <link rel="stylesheet" href="../../support.css?v=support-qr1">
 </head>
 <body>
   <main class="support-shell">
@@ -27,6 +27,7 @@
         <label>소개 문구<textarea id="supportMessage"></textarea></label>
         <label>후원 버튼 이름<input id="supportButtonLabel" type="text" autocomplete="off"></label>
         <label>후원 링크<input id="supportLink" type="url" placeholder="https://..." autocomplete="off"></label>
+        <label>QR 문구<input id="supportQrCaption" type="text" autocomplete="off"></label>
         <label>문의/연락처<input id="supportContact" type="text" autocomplete="off"></label>
         <label>사용처<textarea id="supportUsage"></textarea></label>
         <label>안내 문구<textarea id="supportNotice"></textarea></label>
@@ -42,6 +43,10 @@
         <p class="eyebrow">SUPPORT WHAT_ET</p>
         <h1 data-support="title">WHAT_ET 후원</h1>
         <p class="lead" data-support="message"></p>
+        <figure class="qr-card compact">
+          <img src="../../assets/support-qr.png" alt="후원 계좌 QR 코드">
+          <figcaption data-support="qrCaption"></figcaption>
+        </figure>
         <div class="support-actions" id="supportActions"></div>
         <div class="info-box">
           <small>문의</small>
@@ -50,6 +55,6 @@
       </aside>
     </section>
   </main>
-  <script src="../../support.js?v=support1"></script>
+  <script src="../../support.js?v=support-qr1"></script>
 </body>
 </html>

@@ -156,6 +156,39 @@ h2 {
   gap: 10px;
 }
 
+.qr-card {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  width: min(100%, 420px);
+  margin: 4px 0;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  padding: 18px;
+}
+
+.qr-card.compact {
+  width: 100%;
+}
+
+.qr-card img {
+  display: block;
+  width: min(100%, 300px);
+  height: auto;
+  border-radius: 12px;
+}
+
+.qr-card figcaption {
+  width: 100%;
+  border-radius: 12px;
+  background: var(--soft);
+  padding: 12px 14px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 800;
+}
+
 .support-button[aria-disabled="true"] {
   color: #a2a8ad;
   cursor: default;

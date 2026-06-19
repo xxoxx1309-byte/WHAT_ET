@@ -5,6 +5,7 @@ const defaultSupport = {
   message: "WHAT_ET를 유용하게 쓰고 있다면 작은 응원이 제작과 유지보수에 큰 힘이 됩니다.",
   buttonLabel: "후원 링크 준비 중",
   link: "",
+  qrCaption: "⚡ 호랑이 밥 주기🐯",
   contact: "관리 페이지에서 연락처나 후원 링크를 설정할 수 있습니다.",
   usage: "호스팅 유지, 기능 개선, 폰트와 레이아웃 테스트",
   notice: "후원은 선택 사항이며, 사이트 기능은 계속 무료로 사용할 수 있습니다.",
@@ -25,6 +26,9 @@ function renderSupport(config) {
   });
   document.querySelectorAll("[data-support='contact']").forEach((node) => {
     node.textContent = config.contact || defaultSupport.contact;
+  });
+  document.querySelectorAll("[data-support='qrCaption']").forEach((node) => {
+    node.textContent = config.qrCaption || defaultSupport.qrCaption;
   });
   document.querySelectorAll("[data-support='usage']").forEach((node) => {
     node.textContent = config.usage || defaultSupport.usage;
@@ -61,6 +65,7 @@ function bindSupportForm(config) {
     message: document.querySelector("#supportMessage"),
     buttonLabel: document.querySelector("#supportButtonLabel"),
     link: document.querySelector("#supportLink"),
+    qrCaption: document.querySelector("#supportQrCaption"),
     contact: document.querySelector("#supportContact"),
     usage: document.querySelector("#supportUsage"),
     notice: document.querySelector("#supportNotice"),
