@@ -314,44 +314,107 @@ function renderPreview() {
   const hasContent = note.name || note.alias || note.tagline || hasMeta || note.sections.some((section) => section.title || section.body);
   preview.innerHTML = `
     <header class="paper-head">
-      ${note.alias ? `<div class="paper-alias">${escapeHtml(note.alias)}</div>` : ""}
-      <h2 class="paper-title">${escapeHtml(note.name || "무제 설정")}</h2>
+      <div class="paper-alias editable-text" contenteditable="true" spellcheck="false" data-edit="alias" data-placeholder="별칭">${escapeHtml(note.alias)}</div>
+      <h2 class="paper-title editable-text" contenteditable="true" spellcheck="false" data-edit="name" data-placeholder="무제 설정">${escapeHtml(note.name)}</h2>
       <div class="meta-list">
-        ${note.meta.filter((item) => item.label || item.value).map((item) => `
+        ${note.meta.map((item, index) => `
           <div class="meta-line">
-            <span class="meta-label">${escapeHtml(item.label || "항목")}</span>
-            <span>${escapeHtml(item.value || "-")}</span>
+            <span class="meta-label editable-text" contenteditable="true" spellcheck="false" data-edit="meta-label" data-index="${index}" data-placeholder="항목">${escapeHtml(item.label)}</span>
+            <span class="editable-text" contenteditable="true" spellcheck="false" data-edit="meta-value" data-index="${index}" data-placeholder="-">${escapeHtml(item.value)}</span>
           </div>
         `).join("")}
       </div>
     </header>
-    ${note.tagline ? `<p class="quote">${escapeHtml(note.tagline)}</p>` : ""}
+    <p class="quote editable-text" contenteditable="true" spellcheck="false" data-edit="tagline" data-placeholder="한 줄 문장">${escapeHtml(note.tagline)}</p>
     ${note.sections.map(renderPreviewSection).join("")}
     ${note.signature ? `<p class="signature">${escapeHtml(note.signature)}</p>` : ""}
-    ${hasContent ? "" : `<p class="empty-paper">왼쪽에서 설정을 작성하면 여기에 문서처럼 정리됩니다.</p>`}
+    ${hasContent ? "" : `<p class="empty-paper">문서 위의 제목과 본문을 눌러 바로 작성할 수 있습니다.</p>`}
   `;
+  bindPreviewEditors();
 }
 
-function renderPreviewSection(section) {
-  const title = escapeHtml(section.title || "제목 없음");
+function renderPreviewSection(section, index) {
+  const title = escapeHtml(section.title);
   const body = escapeHtml(section.body || "");
   const fontFamily = sectionFontFamily(section);
   const style = fontFamily ? ` style="font-family: ${fontFamily}, var(--note-font), Pretendard, serif"` : "";
   if (section.type === "fold") {
     return `
       <details class="note-section" open${style}>
-        <summary>${title}</summary>
-        <div class="note-section-body">${body}</div>
+        <summary class="editable-text" contenteditable="true" spellcheck="false" data-edit="section-title" data-index="${index}" data-placeholder="제목">${title}</summary>
+        <div class="note-section-body editable-text" contenteditable="true" spellcheck="false" data-edit="section-body" data-index="${index}" data-placeholder="본문을 입력하세요.">${body}</div>
       </details>
     `;
   }
   const extra = section.type === "box" ? " boxed-section" : "";
   return `
     <section class="note-section${extra}"${style}>
-      ${section.title ? `<h3>${title}</h3>` : ""}
-      <div class="note-section-body">${body}</div>
+      <h3 class="editable-text" contenteditable="true" spellcheck="false" data-edit="section-title" data-index="${index}" data-placeholder="제목">${section.title ? title : ""}</h3>
+      <div class="note-section-body editable-text" contenteditable="true" spellcheck="false" data-edit="section-body" data-index="${index}" data-placeholder="본문을 입력하세요.">${body}</div>
     </section>
   `;
+}
+
+function bindPreviewEditors() {
+  document.querySelectorAll("#notePreview [contenteditable='true']").forEach((element) => {
+    element.addEventListener("focus", () => remember(), { once: true });
+    element.addEventListener("paste", pastePlainText);
+    element.addEventListener("input", () => updateFromPreview(element));
+    element.addEventListener("blur", syncEditorFromNote);
+  });
+}
+
+function updateFromPreview(element) {
+  const value = editableText(element);
+  const index = Number(element.dataset.index);
+  switch (element.dataset.edit) {
+    case "name":
+      note.name = value;
+      fields.name.value = value;
+      break;
+    case "alias":
+      note.alias = value;
+      fields.alias.value = value;
+      break;
+    case "tagline":
+      note.tagline = value;
+      fields.tagline.value = value;
+      break;
+    case "meta-label":
+      if (note.meta[index]) note.meta[index].label = value;
+      break;
+    case "meta-value":
+      if (note.meta[index]) note.meta[index].value = value;
+      break;
+    case "section-title":
+      if (note.sections[index]) note.sections[index].title = value;
+      break;
+    case "section-body":
+      if (note.sections[index]) note.sections[index].body = value;
+      break;
+    default:
+      break;
+  }
+  updateStats();
+  saveNote("자동 저장됨", false);
+}
+
+function syncEditorFromNote() {
+  fields.name.value = note.name;
+  fields.alias.value = note.alias;
+  fields.tagline.value = note.tagline;
+  renderMetaEditor();
+  renderSectionEditor();
+}
+
+function editableText(element) {
+  return element.innerText.replace(/\u00a0/g, " ").replace(/\n$/, "");
+}
+
+function pastePlainText(event) {
+  event.preventDefault();
+  const text = event.clipboardData?.getData("text/plain") || "";
+  document.execCommand("insertText", false, text);
 }
 
 function updateField(key, value) {
@@ -390,7 +453,7 @@ function addMeta() {
 
 function addSection() {
   remember();
-  note.sections.push({ title: "", type: "plain", body: "" });
+  note.sections.push({ title: "", type: "plain", fontFamily: "default", body: "" });
   renderAll();
   touch();
 }
