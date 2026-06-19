@@ -155,14 +155,14 @@
 }
 
 :root {
-  --ink: #33434a;
-  --muted: #75858d;
+  --ink: #242424;
+  --muted: #747b80;
   --line: #d7dee1;
   --panel: #f7f9f9;
   --paper: #ffffff;
-  --accent: #87a9ad;
-  --accent-dark: #5d7f84;
-  --soft: #edf4f5;
+  --accent: #242424;
+  --accent-dark: #171717;
+  --soft: #eef1f2;
   --paper-width: 860px;
   --body-size: 15px;
   --body-leading: 1.88;
@@ -177,7 +177,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: linear-gradient(90deg, #f8fafa 0%, #fdfdfc 100%);
+  background: #f8f9f9;
   color: var(--ink);
 }
 
@@ -221,26 +221,26 @@ button:disabled:hover {
 
 .note-app {
   display: grid;
-  grid-template-columns: 390px minmax(0, 1fr);
+  grid-template-columns: minmax(400px, 430px) minmax(0, 1fr);
   min-height: 100vh;
 }
 
 .editor {
   overflow: auto;
-  max-height: 100vh;
-  padding: 22px 24px 40px;
+  height: 100vh;
+  padding: 0 24px 40px;
   border-right: 1px solid var(--line);
   background: rgba(247, 249, 249, 0.94);
+  scrollbar-gutter: stable;
 }
 
 .editor-head {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 2;
   display: grid;
   gap: 12px;
-  margin: -22px -24px 0;
-  padding: 16px 24px 14px;
+  margin: 0 -24px;
+  padding: 22px 24px 18px;
   border-bottom: 1px solid var(--line);
   background: #f7f9f9;
 }
@@ -314,7 +314,7 @@ h2 {
 .panel-block {
   display: grid;
   gap: 12px;
-  padding: 20px 0;
+  padding: 22px 0;
   border-bottom: 1px solid #e3e8ea;
 }
 
@@ -690,6 +690,7 @@ details.note-section .note-section-body {
   }
 
   .editor {
+    height: auto;
     max-height: none;
     border-right: 0;
     border-bottom: 1px solid var(--line);

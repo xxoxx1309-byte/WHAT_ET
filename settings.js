@@ -24,7 +24,6 @@ const themes = [
   { name: "블루", accent: "#5d8cc2", paper: "#fbfdff", text: "#243448" },
   { name: "라일락", accent: "#9b8ac4", paper: "#fffaff", text: "#352e42" },
   { name: "로즈", accent: "#c47b91", paper: "#fffafa", text: "#433037" },
-  { name: "먹색", accent: "#30363a", paper: "#ffffff", text: "#25292c" },
 ];
 
 const templates = {
@@ -65,7 +64,7 @@ const templates = {
   interview: {
     name: "인터뷰 로그",
     description: "기록자, 대상, 날짜와 인터뷰 박스를 만듭니다.",
-    theme: themes[5],
+    theme: themes[0],
     meta: [
       { label: "기록자", value: "" },
       { label: "대상", value: "" },
